@@ -1,68 +1,60 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.database import engine, Base
-from app.bot import initialize_bot, process_webhook
+from app.bot.investor_wallet_bot import initialize_bot, process_webhook
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-# Create DB tables
-Base.metadata.create_all(bind=engine)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Startup / shutdown lifecycle.
+    כאן אנחנו מעלים את הבוט פעם אחת בזמן עליית השרת.
+    """
     logger.info("Starting SLH Manager - Investor Gateway")
-    try:
-        await initialize_bot()
-    except Exception as e:
-        logger.error(f"Failed to initialize Telegram bot: {e}")
+    await initialize_bot()
+    logger.info("Telegram bot initialized from main.py")
     yield
-    logger.info("Shutting down SLH Manager")
+    logger.info("Shutting down SLH Manager - Investor Gateway")
 
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    docs_url=settings.DOCS_URL,
+    title="SLH Investor Gateway",
+    version="0.1.0",
+    # חשוב: אלה PATHS פנימיים, חייבים להתחיל ב-"/"
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "slh_investor_gateway"}
 
 
 @app.get("/")
 async def root():
-    return {
-        "message": "SLH Manager - Investor Gateway & Wallet",
-        "version": settings.VERSION,
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-
-
-@app.get("/health")
-async def health():
-    return {
-        "status": "ok",
-        "service": "slh-manager",
-        "time": datetime.utcnow().isoformat(),
-    }
+    """
+    דף בית פשוט – אפשר לשפר בעתיד להצגת לינק ל-DOCS למשקיעים.
+    """
+    msg = "SLH Investor Gateway API is running."
+    if settings.DOCS_URL:
+        msg += f" Investor docs: {settings.DOCS_URL}"
+    return {"message": msg}
 
 
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
+    """
+    נקודת Webhook לבוט המשקיעים.
+    """
     data = await request.json()
     await process_webhook(data)
     return JSONResponse({"ok": True})
