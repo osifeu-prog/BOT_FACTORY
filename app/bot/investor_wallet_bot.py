@@ -62,7 +62,7 @@ class InvestorWalletBot:
             MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_text)
         )
 
-        # 🔴 חובה ב-ptb v21 לפני process_update
+        # חובה ב-ptb v21 לפני process_update
         await self.application.initialize()
 
         # Webhook mode
@@ -73,7 +73,7 @@ class InvestorWalletBot:
         else:
             logger.info("No WEBHOOK_URL set - you can run in polling mode locally")
 
-        logger.info("✅ InvestorWalletBot initialized")
+        logger.info("InvestorWalletBot initialized")
 
     # ===== Helpers =====
     def _ensure_user(self, update: Update) -> models.User:
@@ -91,11 +91,11 @@ class InvestorWalletBot:
     ):
         buttons = [
             [
-                InlineKeyboardButton("📊 Balance", callback_data="WALLET_BALANCE"),
-                InlineKeyboardButton("🏦 Wallet", callback_data="WALLET_DETAILS"),
+                InlineKeyboardButton("Balance", callback_data="WALLET_BALANCE"),
+                InlineKeyboardButton("Wallet", callback_data="WALLET_DETAILS"),
             ],
             [
-                InlineKeyboardButton("🔗 Buy BNB", callback_data="WALLET_BUY_BNB"),
+                InlineKeyboardButton("Buy BNB", callback_data="WALLET_BUY_BNB"),
             ],
         ]
         await update.message.reply_text(
@@ -114,53 +114,53 @@ class InvestorWalletBot:
         balance = user.balance_slh or Decimal("0")
         has_wallet = bool(user.bnb_address)
 
-        text = (
-            "Welcome to the *SLH Investor Gateway*.\n\n"
-            f"This bot is intended for strategic investors "
-            f"(minimum {min_invest:,.0f} ILS).\n\n"
-            "With this bot you can:\n"
-            "• Link your personal BNB wallet (BSC)\n"
-            "• View your off-chain SLH balance\n"
-            "• Transfer SLH units to other investors (off-chain)\n"
-            "• Access external links for BNB purchase & staking info\n\n"
-        )
+        text_lines = []
 
-        # Onboarding חכם לפי המצב שלך
-        steps = []
+        text_lines.append("Welcome to the SLH Investor Gateway.")
+        text_lines.append("")
+        text_lines.append(
+            f"This bot is intended for strategic investors (minimum {min_invest:,.0f} ILS)."
+        )
+        text_lines.append("")
+        text_lines.append("With this bot you can:")
+        text_lines.append("- Link your personal BNB wallet (BSC)")
+        text_lines.append("- View your off-chain SLH balance")
+        text_lines.append("- Transfer SLH units to other investors (off-chain)")
+        text_lines.append("- Access external links for BNB purchase and staking info")
+        text_lines.append("")
+        text_lines.append("Next steps:")
+
         if not has_wallet:
-            steps.append("1️⃣ Use /link_wallet to connect your BNB (BSC) address.")
+            text_lines.append("1) Use /link_wallet to connect your BNB (BSC) address.")
         else:
-            steps.append(f"✅ BNB wallet linked: `{user.bnb_address}`")
+            text_lines.append(f"1) BNB wallet linked: {user.bnb_address}")
 
         if balance == Decimal("0"):
-            steps.append(
-                "2️⃣ Once your existing investment is recorded, "
-                "you will see your SLH balance via /balance."
+            text_lines.append(
+                "2) Once your existing investment is recorded, you will see your SLH balance via /balance."
             )
         else:
-            steps.append(f"✅ Current SLH balance: {balance:.4f} (see /balance).")
+            text_lines.append(f"2) Current SLH balance: {balance:.4f} (see /balance).")
 
-        steps.append("3️⃣ Use /wallet to view full wallet details and ecosystem links.")
-        steps.append("4️⃣ Use /whoami to see your ID, username and wallet status.")
+        text_lines.append("3) Use /wallet to view full wallet details and ecosystem links.")
+        text_lines.append("4) Use /whoami to see your ID, username and wallet status.")
 
-        text += "\n".join(steps)
-
-        await update.message.reply_text(text, parse_mode="Markdown")
+        await update.message.reply_text("\n".join(text_lines))
 
     async def cmd_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "SLH Wallet Bot – Help\n\n"
-            "/start   – Intro & onboarding\n"
-            "/wallet  – Wallet details and ecosystem links\n"
+            "/start       – Intro and onboarding\n"
+            "/wallet      – Wallet details and ecosystem links\n"
             "/link_wallet – Link your personal BNB (BSC) address\n"
-            "/balance – View your SLH off-chain balance\n"
-            "/transfer – Internal off-chain transfer to another user\n"
-            "/whoami  – See your Telegram ID, username and wallet status\n\n"
-            "At this stage there is *no redemption of principal* – "
+            "/balance     – View your SLH off-chain balance\n"
+            "/transfer    – Internal off-chain transfer to another user\n"
+            "/whoami      – See your Telegram ID, username and wallet status\n\n"
+            "At this stage there is no redemption of principal – "
             "only usage of SLH units inside the ecosystem.\n"
             "BNB and gas remain in your own wallet via external providers."
         )
-        await update.message.reply_text(text, parse_mode="Markdown")
+        await update.message.reply_text(text)
 
     async def cmd_wallet(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = self._ensure_user(update)
@@ -172,39 +172,41 @@ class InvestorWalletBot:
             or "You have not linked a BNB address yet (see /link_wallet)."
         )
 
-        text = (
-            "🏦 *SLH Wallet Overview*\n\n"
-            f"*Your BNB address (BSC):*\n"
-            f"{user_addr}\n\n"
-            f"*Community wallet address* (for deposits / tracking):\n"
-            f"`{addr}`\n\n"
-            f"*SLH token address:*\n"
-            f"`{token_addr}`\n\n"
-            f"Each SLH nominally represents *{settings.SLH_PRICE_NIS:.0f} ILS*.\n"
-        )
+        lines = []
+        lines.append("SLH Wallet Overview")
+        lines.append("")
+        lines.append("Your BNB address (BSC):")
+        lines.append(f"{user_addr}")
+        lines.append("")
+        lines.append("Community wallet address (for deposits / tracking):")
+        lines.append(f"{addr}")
+        lines.append("")
+        lines.append("SLH token address:")
+        lines.append(f"{token_addr}")
+        lines.append("")
+        lines.append(f"Each SLH nominally represents {settings.SLH_PRICE_NIS:.0f} ILS.")
 
         if settings.BSC_SCAN_BASE and addr and not addr.startswith("<"):
-            text += (
-                f"\n🔗 View community wallet on BscScan:\n"
-                f"{settings.BSC_SCAN_BASE.rstrip('/')}/address/{addr}\n"
-            )
-        if settings.BSC_SCAN_BASE and token_addr and not token_addr.startswith("<"):
-            text += (
-                f"🔗 View SLH token on BscScan:\n"
-                f"{settings.BSC_SCAN_BASE.rstrip('/')}/token/{token_addr}\n"
-            )
-        if settings.BUY_BNB_URL:
-            text += (
-                f"\n💳 External BNB purchase link (optional):\n"
-                f"{settings.BUY_BNB_URL}\n"
-            )
-        if settings.STAKING_INFO_URL:
-            text += (
-                f"\n📚 BNB staking info:\n"
-                f"{settings.STAKING_INFO_URL}\n"
-            )
+            lines.append("")
+            lines.append("View community wallet on BscScan:")
+            lines.append(f"{settings.BSC_SCAN_BASE.rstrip('/')}/address/{addr}")
 
-        await update.message.reply_text(text, parse_mode="Markdown")
+        if settings.BSC_SCAN_BASE and token_addr and not token_addr.startswith("<"):
+            lines.append("")
+            lines.append("View SLH token on BscScan:")
+            lines.append(f"{settings.BSC_SCAN_BASE.rstrip('/')}/token/{token_addr}")
+
+        if settings.BUY_BNB_URL:
+            lines.append("")
+            lines.append("External BNB purchase link (optional):")
+            lines.append(settings.BUY_BNB_URL)
+
+        if settings.STAKING_INFO_URL:
+            lines.append("")
+            lines.append("BNB staking info:")
+            lines.append(settings.STAKING_INFO_URL)
+
+        await update.message.reply_text("\n".join(lines))
 
     async def cmd_link_wallet(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         self._ensure_user(update)
@@ -221,19 +223,20 @@ class InvestorWalletBot:
                 db, telegram_id=tg_user.id, username=tg_user.username
             )
             balance = user.balance_slh or Decimal("0")
+
             text = (
-                "📊 *SLH Off-Chain Balance*\n\n"
-                f"Current balance: *{balance:.4f} SLH*\n\n"
+                "SLH Off-Chain Balance\n\n"
+                f"Current balance: {balance:.4f} SLH\n\n"
                 "This reflects allocations recorded for you inside the system.\n"
                 "There is no redemption yet – only future usage inside the ecosystem."
             )
-            await update.message.reply_text(text, parse_mode="Markdown")
+            await update.message.reply_text(text)
         finally:
             db.close()
 
     async def cmd_whoami(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
-        נותן לך חוויית 'אני רשום במערכת':
+        נותן חוויית "אני רשום במערכת":
         - Telegram ID
         - username
         - כתובת BNB
@@ -247,15 +250,21 @@ class InvestorWalletBot:
             )
             balance = user.balance_slh or Decimal("0")
 
-            text = (
-                "👤 *Your SLH Investor Profile*\n\n"
-                f"*Telegram ID:* `{tg_user.id}`\n"
-                f"*Username:* @{tg_user.username if tg_user.username else 'N/A'}\n"
-                f"*BNB address:* {user.bnb_address or 'Not linked yet (use /link_wallet)'}\n"
-                f"*SLH balance:* {balance:.4f} SLH\n\n"
-                "Share your Telegram ID with the SLH team if needed for allocations.\n"
+            lines = []
+            lines.append("Your SLH Investor Profile")
+            lines.append("")
+            lines.append(f"Telegram ID: {tg_user.id}")
+            lines.append(f"Username: @{tg_user.username}" if tg_user.username else "Username: N/A")
+            lines.append(
+                f"BNB address: {user.bnb_address or 'Not linked yet (use /link_wallet)'}"
             )
-            await update.message.reply_text(text, parse_mode="Markdown")
+            lines.append(f"SLH balance: {balance:.4f} SLH")
+            lines.append("")
+            lines.append(
+                "Share your Telegram ID with the SLH team if needed for allocations."
+            )
+
+            await update.message.reply_text("\n".join(lines))
         finally:
             db.close()
 
