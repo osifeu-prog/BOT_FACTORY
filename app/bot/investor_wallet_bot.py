@@ -29,7 +29,6 @@ class InvestorWalletBot:
     def __init__(self):
         self.application: Application | None = None
         self.bot: Bot | None = None
-        self.initialized: bool = False
 
     # ===== DB helper =====
     def _db(self):
@@ -91,7 +90,6 @@ class InvestorWalletBot:
         else:
             logger.info("No WEBHOOK_URL set - you can run in polling mode locally")
 
-        self.initialized = True
         logger.info("InvestorWalletBot initialized")
 
     # ===== Helpers =====
@@ -518,6 +516,7 @@ class InvestorWalletBot:
     async def cmd_history(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         מציג עד 10 הטרנזקציות האחרונות שבהן המשתמש מעורב (Off-Chain).
+        עובד מול Transaction.from_user / Transaction.to_user (מזהי טלגרם).
         """
         db = self._db()
         try:
@@ -526,22 +525,14 @@ class InvestorWalletBot:
                 db, telegram_id=tg_user.id, username=tg_user.username
             )
 
-            user_ids = []
-            if hasattr(user, "id") and user.id is not None:
-                user_ids.append(user.id)
-            if hasattr(user, "telegram_id") and user.telegram_id is not None:
-                user_ids.append(user.telegram_id)
-
-            if not user_ids:
-                await update.message.reply_text("No transactions found for this profile.")
-                return
+            my_tid = user.telegram_id
 
             q = (
                 db.query(models.Transaction)
                 .filter(
                     or_(
-                        models.Transaction.from_user_id.in_(user_ids),
-                        models.Transaction.to_user_id.in_(user_ids),
+                        models.Transaction.from_user == my_tid,
+                        models.Transaction.to_user == my_tid,
                     )
                 )
                 .order_by(models.Transaction.created_at.desc())
@@ -562,17 +553,11 @@ class InvestorWalletBot:
             lines.append("")
 
             for tx in txs:
-                from_id = getattr(tx, "from_user_id", None)
-                to_id = getattr(tx, "to_user_id", None)
+                from_id = getattr(tx, "from_user", None)
+                to_id = getattr(tx, "to_user", None)
                 tx_type = getattr(tx, "tx_type", "N/A")
-                amount = getattr(tx, "amount_slh", None) or Decimal("0")
+                amount = getattr(tx, "amount_slh", 0)
                 created_at = getattr(tx, "created_at", None)
-
-                direction = "OTHER"
-                if any(uid == from_id for uid in user_ids):
-                    direction = "OUT"
-                if any(uid == to_id for uid in user_ids):
-                    direction = "IN"
 
                 if created_at is not None:
                     try:
@@ -581,6 +566,15 @@ class InvestorWalletBot:
                         ts = str(created_at)
                 else:
                     ts = "N/A"
+
+                if from_id == my_tid and to_id == my_tid:
+                    direction = "SELF"
+                elif from_id == my_tid:
+                    direction = "OUT"
+                elif to_id == my_tid:
+                    direction = "IN"
+                else:
+                    direction = "OTHER"
 
                 lines.append(
                     f"[{ts}] {direction} – {amount:.4f} SLH (type={tx_type}, id={tx.id})"
@@ -605,9 +599,23 @@ class InvestorWalletBot:
 
     async def cmd_send_slh(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
-        קיצור של transfer בפורמט פקודה ישיר:
-        /send_slh <amount> <@username|user_id>
+        קיצור דרך: /send_slh <amount> <@username|user_id>
         """
+        self._ensure_user(update)
+        parts = (update.message.text or "").split()
+        if len(parts) != 3:
+            await update.message.reply_text(
+                "Usage: /send_slh <amount> <@username|user_id>"
+            )
+            return
+
+        try:
+            amount = float(parts[1].replace(",", ""))
+        except ValueError:
+            await update.message.reply_text("Invalid amount.")
+            return
+
+        target = parts[2]
         db = self._db()
         try:
             tg_user = update.effective_user
@@ -615,24 +623,6 @@ class InvestorWalletBot:
                 db, telegram_id=tg_user.id, username=tg_user.username
             )
 
-            if len(context.args) != 2:
-                await update.message.reply_text(
-                    "Usage: /send_slh <amount> <@username|user_id>"
-                )
-                return
-
-            amount_str, target = context.args
-            try:
-                amount = float(amount_str.replace(",", ""))
-            except ValueError:
-                await update.message.reply_text("Invalid amount.")
-                return
-
-            if amount <= 0:
-                await update.message.reply_text("Amount must be greater than zero.")
-                return
-
-            receiver = None
             if target.startswith("@"):
                 username = target[1:]
                 receiver = (
@@ -644,9 +634,7 @@ class InvestorWalletBot:
                 try:
                     tid = int(target)
                 except ValueError:
-                    await update.message.reply_text(
-                        "Target must be @username or numeric telegram_id."
-                    )
+                    await update.message.reply_text("Invalid target format.")
                     return
                 receiver = (
                     db.query(models.User)
@@ -661,9 +649,11 @@ class InvestorWalletBot:
                 return
 
             try:
-                tx = crud.internal_transfer(db, sender=sender, receiver=receiver, amount_slh=amount)
-            except ValueError:
-                await update.message.reply_text("Insufficient balance for this transfer.")
+                tx = crud.internal_transfer(
+                    db, sender=sender, receiver=receiver, amount_slh=amount
+                )
+            except ValueError as e:
+                await update.message.reply_text(str(e))
                 return
 
             await update.message.reply_text(
@@ -776,7 +766,6 @@ class InvestorWalletBot:
             await self.cmd_wallet(fake_update, context)
 
         elif data == "MENU_LINK_WALLET":
-            await self.message.reply_text("Use /link_wallet to link your wallet.")
             await self.cmd_link_wallet(fake_update, context)
 
         elif data == "MENU_HISTORY":
@@ -934,9 +923,8 @@ async def initialize_bot():
 
 
 async def process_webhook(update_dict: dict):
-    if not _bot_instance.application or not getattr(_bot_instance, "initialized", False):
-        logger.error("Telegram Application is not initialized yet – dropping update.")
+    if not _bot_instance.application:
+        logger.error("Application is not initialized")
         return
-
     update = Update.de_json(update_dict, _bot_instance.application.bot)
     await _bot_instance.application.process_update(update)
