@@ -1,34 +1,46 @@
+# app/crud.py
 from decimal import Decimal
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from app import models
 
 
+def _to_decimal(value) -> Decimal:
+    """
+    המרה בטוחה ל-Decimal מכל סוג מספרי / מחרוזת.
+    """
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
+
+
+# ===== Users =====
+
+
 def get_or_create_user(
     db: Session,
     telegram_id: int,
-    username: str | None = None,
+    username: Optional[str] = None,
 ) -> models.User:
     """
-    טוען משתמש לפי telegram_id, ואם לא קיים – יוצר חדש.
-    משתמש ב-telegram_id כ-PK (אין עמודת id בטבלת users).
+    מאחזר משתמש לפי telegram_id, ואם לא קיים – יוצר חדש עם balance_slh=0.
     """
     user = (
         db.query(models.User)
         .filter(models.User.telegram_id == telegram_id)
         .first()
     )
-
     if user:
-        # עדכון username אם השתנה
+        # עדכון username אם התעדכן בטלגרם
         if username and user.username != username:
             user.username = username
+            db.add(user)
             db.commit()
             db.refresh(user)
         return user
 
-    # יצירת משתמש חדש
     user = models.User(
         telegram_id=telegram_id,
         username=username,
@@ -42,7 +54,7 @@ def get_or_create_user(
 
 def set_bnb_address(db: Session, user: models.User, address: str) -> models.User:
     """
-    עדכון כתובת BNB למשתמש.
+    שמירת כתובת BNB למשתמש.
     """
     user.bnb_address = address
     db.add(user)
@@ -51,36 +63,40 @@ def set_bnb_address(db: Session, user: models.User, address: str) -> models.User
     return user
 
 
+# ===== Ledger operations =====
+
+
 def change_balance(
     db: Session,
     user: models.User,
     delta_slh: float | Decimal,
     tx_type: str,
-    from_user: int | None,
-    to_user: int | None,
+    from_user: Optional[int],
+    to_user: Optional[int],
 ) -> models.Transaction:
     """
-    שינוי יתרת SLH למשתמש + יצירת רשומת טרנזקציה בלדג'ר.
-
-    from_user / to_user – מזהי טלגרם (telegram_id), לא מפתח זר לטבלה אחרת.
+    משנה יתרה של משתמש ב-+/- SLH ויוצר רשומת טרנזקציה.
+    משמש גם לאדמין (/admin_credit).
     """
-    delta = Decimal(str(delta_slh))
-
-    current = user.balance_slh or Decimal("0")
+    delta = _to_decimal(delta_slh)
+    current = _to_decimal(user.balance_slh or 0)
     new_balance = current + delta
+
     user.balance_slh = new_balance
 
     tx = models.Transaction(
         from_user=from_user,
         to_user=to_user,
-        tx_type=tx_type,
         amount_slh=delta,
+        tx_type=tx_type,
     )
-    db.add(tx)
+
     db.add(user)
+    db.add(tx)
     db.commit()
     db.refresh(user)
     db.refresh(tx)
+
     return tx
 
 
@@ -91,26 +107,27 @@ def internal_transfer(
     amount_slh: float | Decimal,
 ) -> models.Transaction:
     """
-    העברת SLH פנימית Off-Chain בין שני משתמשים.
+    העברת SLH פנימית בין שני משתמשים.
     """
-    amount = Decimal(str(amount_slh))
-    if amount <= 0:
-        raise ValueError("Transfer amount must be positive")
+    amount = _to_decimal(amount_slh)
 
-    sender_balance = sender.balance_slh or Decimal("0")
+    sender_balance = _to_decimal(sender.balance_slh or 0)
+    if amount <= 0:
+        raise ValueError("Transfer amount must be greater than zero.")
     if sender_balance < amount:
-        raise ValueError("Insufficient balance")
+        raise ValueError("Insufficient balance for this transfer.")
 
     # עדכון יתרות
     sender.balance_slh = sender_balance - amount
-    receiver.balance_slh = (receiver.balance_slh or Decimal("0")) + amount
+    receiver.balance_slh = _to_decimal(receiver.balance_slh or 0) + amount
 
     tx = models.Transaction(
         from_user=sender.telegram_id,
         to_user=receiver.telegram_id,
-        tx_type="transfer",
         amount_slh=amount,
+        tx_type="transfer",
     )
+
     db.add(sender)
     db.add(receiver)
     db.add(tx)
@@ -118,4 +135,5 @@ def internal_transfer(
     db.refresh(sender)
     db.refresh(receiver)
     db.refresh(tx)
+
     return tx
