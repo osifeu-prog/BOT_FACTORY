@@ -11,9 +11,12 @@ from telegram.ext import (
     filters,
 )
 
+from sqlalchemy import or_
+
 from app.core.config import settings
 from app.database import SessionLocal
 from app import crud, models
+from app import blockchain
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +53,7 @@ class InvestorWalletBot:
         self.application.add_handler(CommandHandler("whoami", self.cmd_whoami))
         self.application.add_handler(CommandHandler("summary", self.cmd_summary))
         self.application.add_handler(CommandHandler("docs", self.cmd_docs))
+        self.application.add_handler(CommandHandler("history", self.cmd_history))
 
         # Admin-only command
         self.application.add_handler(CommandHandler("admin_credit", self.cmd_admin_credit))
@@ -157,6 +161,7 @@ class InvestorWalletBot:
         text_lines.append("3) Use /wallet to view full wallet details and ecosystem links.")
         text_lines.append("4) Use /whoami to see your ID, username and wallet status.")
         text_lines.append("5) Use /summary for a full investor dashboard.")
+        text_lines.append("6) Use /history to review your latest transactions.")
 
         await update.message.reply_text("\n".join(text_lines))
 
@@ -167,7 +172,8 @@ class InvestorWalletBot:
             "/summary     – Full investor dashboard (wallet + balance + profile)\n"
             "/wallet      – Wallet details and ecosystem links\n"
             "/link_wallet – Link your personal BNB (BSC) address\n"
-            "/balance     – View your SLH off-chain balance\n"
+            "/balance     – View your SLH off-chain balance (+ On-Chain if available)\n"
+            "/history     – Last transactions in the internal ledger\n"
             "/transfer    – Internal off-chain transfer to another user\n"
             "/whoami      – See your Telegram ID, username and wallet status\n"
             "/docs        – Open the official SLH investor docs\n\n"
@@ -230,7 +236,7 @@ class InvestorWalletBot:
         2) /link_wallet 0xABC...     -> שומר מיד את הכתובת מהפקודה
         """
         tg_user = update.effective_user
-        user = self._ensure_user(update)
+        self._ensure_user(update)
 
         # אם נשלחה כתובת בתוך הפקודה עצמה
         if context.args:
@@ -257,7 +263,6 @@ class InvestorWalletBot:
             return
 
         # מצב רגיל – מבקש כתובת בהודעה הבאה
-        self._ensure_user(update)
         context.user_data["state"] = STATE_AWAITING_BNB_ADDRESS
         await update.message.reply_text(
             "Please send your BNB address (BSC network, usually starts with 0x...)."
@@ -274,22 +279,47 @@ class InvestorWalletBot:
             price = self._slh_price_nis()
             value_nis = balance * price
 
-            text_lines = []
-            text_lines.append("SLH Off-Chain Balance")
-            text_lines.append("")
-            text_lines.append(f"Current balance: {balance:.4f} SLH")
-            text_lines.append(
+            lines = []
+            lines.append("SLH Off-Chain Balance")
+            lines.append("")
+            lines.append(f"Current balance: {balance:.4f} SLH")
+            lines.append(
                 f"Nominal value: {value_nis:.2f} ILS (at {price:.0f} ILS per SLH)"
             )
-            text_lines.append("")
-            text_lines.append(
+            lines.append("")
+
+            # ניסיון להראות גם מצב On-Chain אם יש כתובת
+            onchain_bnb = None
+            onchain_slh = None
+            if user.bnb_address:
+                try:
+                    on = blockchain.get_onchain_balances(user.bnb_address)
+                    onchain_bnb = on.get("bnb")
+                    onchain_slh = on.get("slh")
+                except Exception as e:
+                    logger.warning("On-chain balance fetch failed: %s", e)
+
+            if user.bnb_address and (onchain_bnb is not None or onchain_slh is not None):
+                lines.append("On-Chain view (BNB Chain):")
+                if onchain_bnb is not None:
+                    lines.append(f"- BNB: {onchain_bnb:.6f} BNB")
+                else:
+                    lines.append("- BNB: unavailable (RPC or address error)")
+
+                if onchain_slh is not None:
+                    lines.append(f"- SLH: {onchain_slh:.6f} SLH")
+                else:
+                    lines.append("- SLH: unavailable (token or RPC error)")
+                lines.append("")
+
+            lines.append(
                 "This reflects allocations recorded for you inside the system."
             )
-            text_lines.append(
+            lines.append(
                 "There is no redemption yet – only future usage inside the ecosystem."
             )
 
-            await update.message.reply_text("\n".join(text_lines))
+            await update.message.reply_text("\n".join(lines))
         finally:
             db.close()
 
@@ -335,6 +365,7 @@ class InvestorWalletBot:
         - פרופיל
         - ארנק
         - מאזן SLH + ערך בש״ח
+        - On-Chain BNB+SLH
         - לינקים חשובים
         """
         db = self._db()
@@ -354,6 +385,17 @@ class InvestorWalletBot:
                 or "Not linked yet (use /link_wallet)."
             )
 
+            # On-Chain
+            onchain_bnb = None
+            onchain_slh = None
+            if user.bnb_address:
+                try:
+                    on = blockchain.get_onchain_balances(user.bnb_address)
+                    onchain_bnb = on.get("bnb")
+                    onchain_slh = on.get("slh")
+                except Exception as e:
+                    logger.warning("On-chain balance fetch failed: %s", e)
+
             lines = []
             lines.append("SLH Investor Dashboard")
             lines.append("")
@@ -372,6 +414,19 @@ class InvestorWalletBot:
             lines.append(f"- SLH: {balance:.4f} SLH")
             lines.append(f"- Nominal ILS value: {value_nis:.2f} ILS")
             lines.append("")
+
+            if user.bnb_address and (onchain_bnb is not None or onchain_slh is not None):
+                lines.append("On-Chain (BNB Chain) – based on your BNB address:")
+                if onchain_bnb is not None:
+                    lines.append(f"- BNB: {onchain_bnb:.6f} BNB")
+                else:
+                    lines.append("- BNB: unavailable (RPC or address error)")
+                if onchain_slh is not None:
+                    lines.append(f"- SLH: {onchain_slh:.6f} SLH")
+                else:
+                    lines.append("- SLH: unavailable (token or RPC error)")
+                lines.append("")
+
             if settings.BSC_SCAN_BASE and addr and not addr.startswith("<"):
                 lines.append("On BscScan:")
                 lines.append(
@@ -381,11 +436,13 @@ class InvestorWalletBot:
                 lines.append(
                     f"- SLH token: {settings.BSC_SCAN_BASE.rstrip('/')}/token/{token_addr}"
                 )
+
             if settings.DOCS_URL:
                 lines.append("")
                 lines.append(f"Investor Docs: {settings.DOCS_URL}")
+
             lines.append("")
-            lines.append("Key commands: /wallet, /balance, /transfer, /docs, /help")
+            lines.append("Key commands: /wallet, /balance, /history, /transfer, /docs, /help")
 
             await update.message.reply_text("\n".join(lines))
         finally:
@@ -414,6 +471,93 @@ class InvestorWalletBot:
         )
 
         await update.message.reply_text("\n".join(text_lines))
+
+    async def cmd_history(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        מציג עד 10 הטרנזקציות האחרונות שבהן המשתמש מעורב (Off-Chain),
+        מתוך טבלת transactions ב-DB.
+        בנוי בצורה סלחנית לשמות שדות – אם יש הבדל בסכימה, רק צריך להתאים כאן.
+        """
+        db = self._db()
+        try:
+            tg_user = update.effective_user
+            user = crud.get_or_create_user(
+                db, telegram_id=tg_user.id, username=tg_user.username
+            )
+
+            # ננסה לכסות גם id פנימי וגם telegram_id – תלוי איך המודל שלך בנוי
+            user_ids = []
+            if hasattr(user, "id") and user.id is not None:
+                user_ids.append(user.id)
+            if hasattr(user, "telegram_id") and user.telegram_id is not None:
+                user_ids.append(user.telegram_id)
+
+            if not user_ids:
+                await update.message.reply_text("No transactions found for this profile.")
+                return
+
+            # נניח שמודל ה-Transaction כולל from_user_id / to_user_id / created_at / amount_slh / tx_type
+            q = db.query(models.Transaction).filter(
+                or_(
+                    models.Transaction.from_user_id.in_(user_ids),
+                    models.Transaction.to_user_id.in_(user_ids),
+                )
+            ).order_by(models.Transaction.created_at.desc()).limit(10)
+
+            txs = q.all()
+
+            if not txs:
+                await update.message.reply_text(
+                    "No recent transactions found in the internal ledger."
+                )
+                return
+
+            lines = []
+            lines.append("Last transactions (internal ledger)")
+            lines.append("Most recent first (max 10):")
+            lines.append("")
+
+            for tx in txs:
+                # זיהוי כיוון (IN/OUT)
+                from_id = getattr(tx, "from_user_id", None)
+                to_id = getattr(tx, "to_user_id", None)
+                tx_type = getattr(tx, "tx_type", "N/A")
+                amount = (
+                    getattr(tx, "amount_slh", None)
+                    or getattr(tx, "delta_slh", None)
+                    or getattr(tx, "amount", None)
+                    or 0
+                )
+                created_at = getattr(tx, "created_at", None)
+
+                direction = "OTHER"
+                if any(uid == from_id for uid in user_ids):
+                    direction = "OUT"
+                if any(uid == to_id for uid in user_ids):
+                    direction = "IN"
+
+                # תצוגת תאריך בסיסית
+                if created_at is not None:
+                    try:
+                        ts = created_at.strftime("%Y-%m-%d %H:%M")
+                    except Exception:
+                        ts = str(created_at)
+                else:
+                    ts = "N/A"
+
+                lines.append(
+                    f"[{ts}] {direction} – {amount:.4f} SLH (type={tx_type}, id={tx.id})"
+                )
+
+            await update.message.reply_text("\n".join(lines))
+
+        except Exception as e:
+            logger.exception("Error while fetching history: %s", e)
+            await update.message.reply_text(
+                "Could not load transaction history. Please contact the SLH team."
+            )
+        finally:
+            db.close()
 
     async def cmd_transfer(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         self._ensure_user(update)
