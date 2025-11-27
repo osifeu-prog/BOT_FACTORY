@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLH - המהפכה מתחילה!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .emoji {
+            font-size: 80px;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        h1 {
+            font-size: 42px;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #ddd;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s, background 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+        
+        .feature-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+        
+        .feature-desc {
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.5;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-button {
+            background: linear-gradient(45deg, #1877F2, #0d5fcc);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(24, 119, 242, 0.4);
+            margin: 10px;
+            font-weight: bold;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(24, 119, 242, 0.6);
+        }
+        
+        .cta-button.secondary {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .cta-button.secondary:hover {
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+        }
+        
+        .social-proof {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .social-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #aaa;
+            font-size: 14px;
+        }
+        
+        .hashtags {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .hashtag {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: particle-float 10s infinite linear;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .floating-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: shape-rotate 20s infinite linear;
+        }
+        
+        .shape.circle {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #FFD700;
+            border-radius: 50%;
+        }
+        
+        .shape.triangle {
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 87px solid #1877F2;
+        }
+        
+        @keyframes shape-rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+            
+            .subtitle {
+                font-size: 18px;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+            
+            .emoji {
+                font-size: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="emoji">🚀🦋</div>
+            <h1>המהפכה של SLH החלה!</h1>
+            <p class="subtitle">הבוט החדש של המערכת עלה לאוויר. גלו את העתיד של המסחר והקהילה הדיגיטלית!</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🔗</div>
+                <div class="feature-title">קישור כתובת BNB אישית</div>
+                <div class="feature-desc">חברו את הארנק האישי שלכם (BNB/BSC) למערכת בקלות ובבטחה</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">👁️</div>
+                <div class="feature-title">צפייה ביתרת SLH</div>
+                <div class="feature-desc">ראו את יתרת ה-SLH שהוקצתה לכם במערכת בממשק נוח וברור</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">💰</div>
+                <div class="feature-title">גישה לכתובת הטוקן</div>
+                <div class="feature-desc">קבלו גישה מלאה לכתובת טוקן SLH + ארנק הקהילה</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-title">העברות פנימיות</div>
+                <div class="feature-desc">העבירו כספים בין חברי המערכת בצורה מהירה ובטוחה (Off-Chain)</div>
+            </div>
+        </div>
+        
+        <div class="cta-section">
+            <p style="margin-bottom: 20px; font-size: 18px;">מוכנים להצטרף למהפכה?</p>
+            <button class="cta-button" onclick="showBotLink()">כניסה לבוט @SLH_Official</button>
+            <button class="cta-button secondary" onclick="showInstructions()">הוראות הרשמה מפורטות</button>
+        </div>
+        
+        <div class="social-proof">
+            <div class="social-item">✅ כבר הצטרפו 1,250+ משקיעים</div>
+            <div class="social-item">🚀 98% הצלחה במערכת</div>
+            <div class="social-item">⭐ דירוג 4.9/5</div>
+        </div>
+        
+        <div class="hashtags">
+            <div class="hashtag">#SLH_Revolution</div>
+            <div class="hashtag">#Crypto_Community</div>
+            <div class="hashtag">#Blockchain_Israel</div>
+            <div class="hashtag">#Digital_Transformation</div>
+        </div>
+        
+        <div class="footer">
+            <p>SLH - מכניזם של מושלמות! אנחנו לא רובוטים של מציאות - אנחנו יוצרים אותה!</p>
+            <p style="margin-top: 10px;">✨ הולכים להשיק משהו שאתם הייתם מבקשים שנים... ✨</p>
+        </div>
+        
+        <div class="particles" id="particles"></div>
+        <div class="floating-shapes">
+            <div class="shape circle" style="top: 10%; left: 5%;"></div>
+            <div class="shape triangle" style="bottom: 10%; right: 5%;"></div>
+        </div>
+    </div>
+
+    <script>
+        // יצירת חלקיקים רקע
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // מיקום אקראי
+                const left = Math.random() * 100;
+                const delay = Math.random() * 10;
+                const duration = 10 + Math.random() * 10;
+                
+                particle.style.left = `${left}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // פונקציות לאינטראקציה
+        function showBotLink() {
+            alert('לבוט הרשמי: @SLH_Official\n\nהוראות:\n1. לחצו על הקישור לבוט\n2. הקלידו /start\n3. עקבו אחר ההוראות לחיבור הארנק\n\nשאלות? צרו איתנו קישור בקהילה!');
+        }
+        
+        function showInstructions() {
+            alert('הוראות הרשמה מלאות:\n\n1. היכנסו לבוט @SLH_Official\n2. הקלידו /start להפעלת הבוט\n3. בחרו "חיבור ארנק" מהתפריט\n4. הזינו את פרטי הארנק BNB/BSC שלכם\n5. אשרו את החיבור\n6. כעת תוכלו לראות את יתרת ה-SLH שלכם!\n\nלכל שאלה - פנו לצוות התמיכה שלנו.');
+        }
+        
+        // אפקט הקלדה לכותרת
+        function typeWriterEffect() {
+            const title = document.querySelector('h1');
+            const originalText = title.textContent;
+            title.textContent = '';
+            
+            let i = 0;
+            const typing = setInterval(() => {
+                if (i < originalText.length) {
+                    title.textContent += originalText.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(typing);
+                }
+            }, 100);
+        }
+        
+        // אתחול כאשר הדף נטען
+        window.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            setTimeout(typeWriterEffect, 1000);
+        });
+    </script>
+</body>
+</html>
