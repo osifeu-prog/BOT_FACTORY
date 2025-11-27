@@ -118,8 +118,8 @@ class InvestorWalletBot:
         return InlineKeyboardMarkup(
             [
                 [
-                    InlineKeyboardButton("📊 Summary", callback_data="MENU_SUMMARY"),
-                    InlineKeyboardButton("💰 Balance", callback_data="MENU_BALANCE"),
+                InlineKeyboardButton("📊 Summary", callback_data="MENU_SUMMARY"),
+                InlineKeyboardButton("💰 Balance", callback_data="MENU_BALANCE"),
                 ],
                 [
                     InlineKeyboardButton("👛 Wallet", callback_data="MENU_WALLET"),
@@ -316,7 +316,10 @@ class InvestorWalletBot:
             "Please send your BNB address (BSC network, usually starts with 0x...)."
         )
 
-       async def cmd_balance(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def cmd_balance(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        מציג יתרה Off-Chain ותוספת On-Chain אם אפשר.
+        """
         db = self._db()
         try:
             tg_user = update.effective_user
@@ -423,12 +426,12 @@ class InvestorWalletBot:
                 or "Not linked yet (use /link_wallet)."
             )
 
-            # On-Chain
+            # On-Chain (אם יש כתובת + RPC)
             onchain_bnb = None
             onchain_slh = None
-            if user.bnb_address:
+            if user.bnb_address and settings.BSC_RPC_URL:
                 try:
-                    on = blockchain.get_onchain_balances(user.bnb_address)
+                    on = blockchain.get_onchain_balances(user.bnb_address) or {}
                     onchain_bnb = on.get("bnb")
                     onchain_slh = on.get("slh")
                 except Exception as e:
