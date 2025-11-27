@@ -1,18 +1,8 @@
-# app/models.py
 from datetime import datetime
 from decimal import Decimal
+from sqlalchemy import Column, Integer, BigInteger, String, Numeric, DateTime, ForeignKey
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    BigInteger,
-    String,
-    Numeric,
-    DateTime,
-)
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from app.database import Base
 
 
 class User(Base):
@@ -22,39 +12,15 @@ class User(Base):
     telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
     username = Column(String, index=True, nullable=True)
     bnb_address = Column(String, nullable=True)
-
-    # יתרה פנימית ב-SLH (Off-Chain)
-    balance_slh = Column(Numeric(24, 6), nullable=False, default=Decimal("0"))
-
-    def __repr__(self) -> str:
-        return f"<User telegram_id={self.telegram_id} username={self.username}>"
+    balance_slh = Column(Numeric(precision=24, scale=6), default=Decimal("0"))
 
 
 class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
-
-    # מזהי טלגרם (לא מפתחות זרים כדי לשמור על פשטות)
-    from_user = Column(BigInteger, nullable=True)  # יכול להיות None (admin_credit)
+    from_user = Column(BigInteger, nullable=True)
     to_user = Column(BigInteger, nullable=True)
-
-    # כמות ב-SLH
-    amount_slh = Column(Numeric(24, 6), nullable=False)
-
-    # טיפוס טרנזקציה: "admin_credit", "transfer" וכו'
-    tx_type = Column(String(50), nullable=False)
-
-    created_at = Column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=datetime.utcnow,
-    )
-
-    def __repr__(self) -> str:
-        return (
-            f"<Transaction id={self.id} "
-            f"type={self.tx_type} "
-            f"from={self.from_user} to={self.to_user} "
-            f"amount={self.amount_slh}>"
-        )
+    amount_slh = Column(Numeric(precision=24, scale=6), nullable=False)
+    tx_type = Column(String, default="transfer")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
