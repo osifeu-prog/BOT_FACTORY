@@ -43,22 +43,16 @@ async def health():
 
 @app.get("/debug/status")
 async def debug_status(secret: str | None = None) -> dict:
-    """Lightweight internal status endpoint.
-
-    Protects itself with a simple shared secret – by default the first 8 chars
-    of SECRET_KEY. You can override by passing any string and checking it here.
-    """
     expected = (settings.SECRET_KEY or "")[:8]
     if not secret or secret != expected:
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    # Check DB connectivity
     db_ok = False
     try:
         db = SessionLocal()
         db.execute("SELECT 1")
         db_ok = True
-    except Exception:  # noqa: BLE001
+    except Exception:
         db_ok = False
     finally:
         try:
@@ -78,7 +72,6 @@ async def debug_status(secret: str | None = None) -> dict:
 
 @app.get("/personal/{telegram_id}", response_class=HTMLResponse)
 async def personal_page(telegram_id: int):
-    """Simple public investor page – can be turned into a full site later."""
     db = SessionLocal()
     try:
         user = db.query(models.User).filter(models.User.telegram_id == telegram_id).first()
@@ -88,7 +81,6 @@ async def personal_page(telegram_id: int):
     if not user:
         raise HTTPException(status_code=404, detail="Unknown investor.")
 
-    # Note: we intentionally do not expose confidential data – only public-facing info.
     html = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -109,7 +101,7 @@ async def personal_page(telegram_id: int):
   <main class="card">
     <div class="muted">SLH · Investor Node</div>
     <h1>Community Investor #{telegram_id}</h1>
-    <p class="muted">This is a public, read‑only card for one investor node in the SLH ecosystem.</p>
+    <p class="muted">This is a public, read-only card for one investor node in the SLH ecosystem.</p>
 
     <p class="label">Telegram</p>
     <p class="value">@{user.username or telegram_id}</p>
@@ -126,8 +118,8 @@ async def personal_page(telegram_id: int):
     </p>
 
     <p style="margin-top:1.5rem;">
-      <span class="chip">On‑chain: BNB Smart Chain</span>
-      <span class="chip">Off‑chain: Internal SLH ledger</span>
+      <span class="chip">On-chain: BNB Smart Chain</span>
+      <span class="chip">Off-chain: Internal SLH ledger</span>
     </p>
   </main>
 </body>
