@@ -35,57 +35,55 @@ class InvestorWalletBot:
 
     # ===== Initialization =====
 
-async def initialize(self):
-    if not settings.BOT_TOKEN:
-        logger.warning("BOT_TOKEN is not set, skipping Telegram bot initialization")
-        return
+    async def initialize(self):
+        if not settings.BOT_TOKEN:
+            logger.warning("BOT_TOKEN is not set, skipping Telegram bot initialization")
+            return
 
-    self.application = Application.builder().token(settings.BOT_TOKEN).build()
-    self.bot = self.application.bot
+        self.application = Application.builder().token(settings.BOT_TOKEN).build()
+        self.bot = self.application.bot
 
-    # Commands
-    self.application.add_handler(CommandHandler("start", self.cmd_start))
-    self.application.add_handler(CommandHandler("help", self.cmd_help))
-    self.application.add_handler(CommandHandler("menu", self.cmd_menu))
-    self.application.add_handler(CommandHandler("wallet", self.cmd_wallet))
-    self.application.add_handler(CommandHandler("link_wallet", self.cmd_link_wallet))
-    self.application.add_handler(CommandHandler("balance", self.cmd_balance))
-    self.application.add_handler(CommandHandler("history", self.cmd_history))
-    self.application.add_handler(CommandHandler("transfer", self.cmd_transfer))
-    self.application.add_handler(CommandHandler("send_slh", self.cmd_send_slh))
-    self.application.add_handler(CommandHandler("whoami", self.cmd_whoami))
-    self.application.add_handler(CommandHandler("summary", self.cmd_summary))
-    self.application.add_handler(CommandHandler("docs", self.cmd_docs))
-    self.application.add_handler(CommandHandler("onchain_balance", self.cmd_onchain_balance))
+        # Commands
+        self.application.add_handler(CommandHandler("start", self.cmd_start))
+        self.application.add_handler(CommandHandler("help", self.cmd_help))
+        self.application.add_handler(CommandHandler("menu", self.cmd_menu))
+        self.application.add_handler(CommandHandler("wallet", self.cmd_wallet))
+        self.application.add_handler(CommandHandler("link_wallet", self.cmd_link_wallet))
+        self.application.add_handler(CommandHandler("balance", self.cmd_balance))
+        self.application.add_handler(CommandHandler("history", self.cmd_history))
+        self.application.add_handler(CommandHandler("transfer", self.cmd_transfer))
+        self.application.add_handler(CommandHandler("send_slh", self.cmd_send_slh))
+        self.application.add_handler(CommandHandler("whoami", self.cmd_whoami))
+        self.application.add_handler(CommandHandler("summary", self.cmd_summary))
+        self.application.add_handler(CommandHandler("docs", self.cmd_docs))
+        self.application.add_handler(CommandHandler("onchain_balance", self.cmd_onchain_balance))
 
-    # Admin-only commands
-    self.application.add_handler(CommandHandler("admin_credit", self.cmd_admin_credit))
-    self.application.add_handler(CommandHandler("admin_menu", self.cmd_admin_menu))
-    self.application.add_handler(CommandHandler("admin_list_users", self.cmd_admin_list_users))
-    self.application.add_handler(CommandHandler("admin_ledger", self.cmd_admin_ledger))
-    self.application.add_handler(CommandHandler("admin_send_bnb", self.cmd_admin_send_bnb))
-    self.application.add_handler(CommandHandler("admin_send_slh", self.cmd_admin_send_slh))
+        # Admin-only commands
+        self.application.add_handler(CommandHandler("admin_credit", self.cmd_admin_credit))
+        self.application.add_handler(CommandHandler("admin_menu", self.cmd_admin_menu))
+        self.application.add_handler(CommandHandler("admin_list_users", self.cmd_admin_list_users))
+        self.application.add_handler(CommandHandler("admin_ledger", self.cmd_admin_ledger))
+        self.application.add_handler(CommandHandler("admin_send_bnb", self.cmd_admin_send_bnb))
+        self.application.add_handler(CommandHandler("admin_send_slh", self.cmd_admin_send_slh))
 
-    # Callback query handlers
-    self.application.add_handler(
-        CallbackQueryHandler(self.cb_admin_menu, pattern="^ADMIN_")
-    )
+        # Callback query handlers
+        self.application.add_handler(
+            CallbackQueryHandler(self.cb_admin_menu, pattern="^ADMIN_")
+        )
 
-    # חובה ב-ptb v21 לפני process_update
-    await self.application.initialize()
+        # חובה ב-ptb v21 לפני process_update
+        await self.application.initialize()
 
-    # Webhook mode
-    if settings.WEBHOOK_URL:
-        webhook_url = f"{settings.WEBHOOK_URL.rstrip('/')}/webhook/telegram"
-        await self.bot.set_webhook(webhook_url)
-        logger.info(f"Webhook set to: {webhook_url}")
-    else:
-        logger.info("No WEBHOOK_URL set - you can run in polling mode locally")
+        # Webhook mode
+        if settings.WEBHOOK_URL:
+            webhook_url = f"{settings.WEBHOOK_URL.rstrip('/')}/webhook/telegram"
+            await self.bot.set_webhook(webhook_url)
+            logger.info(f"Webhook set to: {webhook_url}")
+        else:
+            logger.info("No WEBHOOK_URL set - you can run in polling mode locally")
 
-    logger.info("InvestorWalletBot initialized")
+        logger.info("InvestorWalletBot initialized")
 
-
-    # ===== Helpers =====
     def _ensure_user(self, update: Update) -> models.User:
         db = self._db()
         try:
@@ -157,16 +155,6 @@ async def initialize(self):
                 [
                     InlineKeyboardButton(
                         "📜 Ledger overview", callback_data="ADMIN_HELP_HISTORY"
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "💸 On-chain BNB send", callback_data="ADMIN_HELP_SEND_BNB"
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "🪙 On-chain SLH send", callback_data="ADMIN_HELP_SEND_SLH"
                     )
                 ],
             ]
@@ -833,135 +821,6 @@ async def initialize(self):
         finally:
             db.close()
 
-async def cmd_admin_send_bnb(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Admin: send native BNB from the community wallet to any BSC address.
-
-    Usage:
-    /admin_send_bnb <to_address> <amount_bnb>
-    """
-    if not self._is_admin(update.effective_user.id):
-        await update.message.reply_text("This command is admin-only.")
-        return
-
-    parts = (update.message.text or "").split()
-    if len(parts) != 3:
-        await update.message.reply_text(
-            "Usage: /admin_send_bnb <to_address> <amount_bnb>"
-        )
-        return
-
-    to_address = parts[1].strip()
-    amount_str = parts[2].strip()
-
-    from decimal import Decimal as _D
-    try:
-        amount = _D(amount_str)
-    except Exception:
-        await update.message.reply_text("Invalid amount – use a numeric value, e.g. 0.001")
-        return
-
-    try:
-        tx_hash = blockchain.send_bnb_from_community(to_address, amount)
-    except Exception as e:
-        await update.message.reply_text(f"Error sending BNB: {e}")
-        return
-
-    lines = []
-    lines.append("✅ On-chain BNB transfer sent.")
-    lines.append(f"Tx hash: {tx_hash}")
-    if settings.BSC_SCAN_BASE:
-        base = settings.BSC_SCAN_BASE.rstrip("/")
-        lines.append(f"BscScan: {base}/tx/{tx_hash}")
-    await update.message.reply_text("\n".join(lines))
-
-async def cmd_admin_send_slh(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Admin: send SLH tokens from the community wallet.
-
-    Usage:
-    /admin_send_slh <to_address> <amount_slh>
-    """
-    if not self._is_admin(update.effective_user.id):
-        await update.message.reply_text("This command is admin-only.")
-        return
-
-    parts = (update.message.text or "").split()
-    if len(parts) != 3:
-        await update.message.reply_text(
-            "Usage: /admin_send_slh <to_address> <amount_slh>"
-        )
-        return
-
-    to_address = parts[1].strip()
-    amount_str = parts[2].strip()
-
-    from decimal import Decimal as _D
-    try:
-        amount = _D(amount_str)
-    except Exception:
-        await update.message.reply_text("Invalid amount – use a numeric value, e.g. 10")
-        return
-
-    try:
-        tx_hash = blockchain.send_slh_from_community(to_address, amount)
-    except Exception as e:
-        await update.message.reply_text(f"Error sending SLH: {e}")
-        return
-
-    lines = []
-    lines.append("✅ On-chain SLH transfer sent.")
-    lines.append(f"Tx hash: {tx_hash}")
-    if settings.BSC_SCAN_BASE:
-        base = settings.BSC_SCAN_BASE.rstrip("/")
-        lines.append(f"BscScan: {base}/tx/{tx_hash}")
-    await update.message.reply_text("\n".join(lines))
-
-async def cmd_onchain_balance(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show purely on-chain balances for the user's linked BNB address."""
-    db = self._db()
-    try:
-        tg_user = update.effective_user
-        user = crud.get_or_create_user(
-            db, telegram_id=tg_user.id, username=tg_user.username
-        )
-
-        if not user.bnb_address:
-            await update.message.reply_text(
-                "No BNB wallet linked yet. Use /link_wallet to attach your BSC address first."
-            )
-            return
-
-        on = blockchain.get_onchain_balances(user.bnb_address)
-        if not on:
-            await update.message.reply_text(
-                "Could not fetch on-chain balances (RPC or address issue)."
-            )
-            return
-
-        bnb = on.get("bnb")
-        slh = on.get("slh")
-
-        lines = []
-        lines.append("On-chain balances (BNB Smart Chain):")
-        lines.append(f"Address: {user.bnb_address}")
-        lines.append("")
-        if bnb is not None:
-            lines.append(f"- BNB: {bnb:.6f} BNB")
-        else:
-            lines.append("- BNB: unavailable")
-        if slh is not None:
-            lines.append(f"- SLH: {slh:.6f} SLH")
-        else:
-            lines.append("- SLH: unavailable")
-
-        if settings.BSC_SCAN_BASE:
-            base = settings.BSC_SCAN_BASE.rstrip("/")
-            lines.append("")
-            lines.append(f"BscScan: {base}/address/{user.bnb_address}")
-
-        await update.message.reply_text("\n".join(lines))
-    finally:
-        db.close()
-
     # ===== Callback handlers =====
 
     async def cb_wallet_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1047,28 +906,6 @@ async def cmd_onchain_balance(self, update: Update, context: ContextTypes.DEFAUL
                 "For now, use /history from a user account to see their last 10 transactions,\n"
                 "or /admin_ledger to see the global last 50 transactions.\n"
                 "In future iterations we can add global admin views and filters."
-            )
-            await query.edit_message_text(text)
-
-        elif data == "ADMIN_HELP_SEND_BNB":
-            text = (
-                "On-chain BNB send (from community wallet):\n\n"
-                "Command:\n"
-                "/admin_send_bnb <to_address> <amount_bnb>\n\n"
-                "Example:\n"
-                "/admin_send_bnb 0x1234...abcd 0.001\n\n"
-                "The bot will sign and broadcast a native BNB transfer using COMMUNITY_WALLET_PRIVATE_KEY."
-            )
-            await query.edit_message_text(text)
-
-        elif data == "ADMIN_HELP_SEND_SLH":
-            text = (
-                "On-chain SLH send (from community wallet):\n\n"
-                "Command:\n"
-                "/admin_send_slh <to_address> <amount_slh>\n\n"
-                "Example:\n"
-                "/admin_send_slh 0x1234...abcd 10\n\n"
-                "The bot will call the SLH token contract 'transfer' function using the community wallet key."
             )
             await query.edit_message_text(text)
 
