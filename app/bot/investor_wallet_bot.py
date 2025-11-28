@@ -34,7 +34,6 @@ class InvestorWalletBot:
         return SessionLocal()
 
     # ===== Initialization =====
-
     async def initialize(self):
         if not settings.BOT_TOKEN:
             logger.warning("BOT_TOKEN is not set, skipping Telegram bot initialization")
@@ -50,25 +49,36 @@ class InvestorWalletBot:
         self.application.add_handler(CommandHandler("wallet", self.cmd_wallet))
         self.application.add_handler(CommandHandler("link_wallet", self.cmd_link_wallet))
         self.application.add_handler(CommandHandler("balance", self.cmd_balance))
+        self.application.add_handler(CommandHandler("onchain_balance", self.cmd_onchain_balance))
         self.application.add_handler(CommandHandler("history", self.cmd_history))
         self.application.add_handler(CommandHandler("transfer", self.cmd_transfer))
         self.application.add_handler(CommandHandler("send_slh", self.cmd_send_slh))
         self.application.add_handler(CommandHandler("whoami", self.cmd_whoami))
         self.application.add_handler(CommandHandler("summary", self.cmd_summary))
         self.application.add_handler(CommandHandler("docs", self.cmd_docs))
-        self.application.add_handler(CommandHandler("onchain_balance", self.cmd_onchain_balance))
 
         # Admin-only commands
         self.application.add_handler(CommandHandler("admin_credit", self.cmd_admin_credit))
         self.application.add_handler(CommandHandler("admin_menu", self.cmd_admin_menu))
         self.application.add_handler(CommandHandler("admin_list_users", self.cmd_admin_list_users))
         self.application.add_handler(CommandHandler("admin_ledger", self.cmd_admin_ledger))
-        self.application.add_handler(CommandHandler("admin_send_bnb", self.cmd_admin_send_bnb))
-        self.application.add_handler(CommandHandler("admin_send_slh", self.cmd_admin_send_slh))
 
-        # Callback query handlers
+        # Callback for inline buttons – משקיעים
         self.application.add_handler(
-            CallbackQueryHandler(self.cb_admin_menu, pattern="^ADMIN_")
+            CallbackQueryHandler(self.cb_wallet_menu, pattern=r"^WALLET_")
+        )
+        self.application.add_handler(
+            CallbackQueryHandler(self.cb_main_menu, pattern=r"^MENU_")
+        )
+
+        # Callback לאדמין
+        self.application.add_handler(
+            CallbackQueryHandler(self.cb_admin_menu, pattern=r"^ADMIN_")
+        )
+
+        # Generic text handler (for address / amounts / usernames)
+        self.application.add_handler(
+            MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_text)
         )
 
         # חובה ב-ptb v21 לפני process_update
@@ -84,6 +94,7 @@ class InvestorWalletBot:
 
         logger.info("InvestorWalletBot initialized")
 
+    # ===== Helpers =====
     def _ensure_user(self, update: Update) -> models.User:
         db = self._db()
         try:
@@ -528,6 +539,65 @@ class InvestorWalletBot:
         )
 
         await update.message.reply_text("\n".join(text_lines))
+
+
+    async def cmd_onchain_balance(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show live on-chain BNB & SLH balances for the linked wallet."""
+        db = self._db()
+        try:
+            tg_user = update.effective_user
+            user = crud.get_or_create_user(
+                db, telegram_id=tg_user.id, username=tg_user.username
+            )
+
+            if not user.bnb_address:
+                await update.message.reply_text(
+                    "You have not linked a BNB address yet. Use /link_wallet first."
+                )
+                return
+
+            if not settings.BSC_RPC_URL:
+                await update.message.reply_text(
+                    "On-chain RPC is not configured on the server (BSC_RPC_URL missing)."
+                )
+                return
+
+            try:
+                on = blockchain.get_onchain_balances(user.bnb_address)
+                onchain_bnb = on.get("bnb")
+                onchain_slh = on.get("slh")
+            except Exception as e:
+                logger.warning("On-chain balance fetch failed: %s", e)
+                await update.message.reply_text(
+                    "Failed to fetch on-chain balances (RPC or token error)."
+                )
+                return
+
+            lines = []
+            lines.append("On-Chain Balances (BNB Smart Chain)")
+            lines.append(f"Address: {user.bnb_address}")
+            lines.append("")
+            if onchain_bnb is not None:
+                lines.append(f"- BNB: {onchain_bnb:.6f} BNB")
+            else:
+                lines.append("- BNB: unavailable (RPC or address error)")
+            if onchain_slh is not None:
+                lines.append(f"- SLH: {onchain_slh:.6f} SLH")
+            else:
+                lines.append("- SLH: unavailable (token or RPC error)")
+
+            if settings.BSC_SCAN_BASE:
+                base = settings.BSC_SCAN_BASE.rstrip("/")
+                lines.append("")
+                lines.append("On BscScan:")
+                lines.append(f"- Wallet: {base}/address/{user.bnb_address}")
+                if settings.SLH_TOKEN_ADDRESS:
+                    lines.append(f"- SLH token: {base}/token/{settings.SLH_TOKEN_ADDRESS}")
+
+            await update.message.reply_text("\n".join(lines))
+        finally:
+            db.close()
+
 
     async def cmd_history(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
