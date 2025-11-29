@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     # מספר דצימלים של טוקן SLH ברשת (לפי החוזה – כרגע הגדרנו 15 ב-ENV)
     SLH_TOKEN_DECIMALS: int = 18
 
+    # שפת ברירת מחדל לבוט (en/he/ar/ru)
+    DEFAULT_LANGUAGE: str = "en"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
