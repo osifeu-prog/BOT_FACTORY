@@ -26,6 +26,7 @@ class User(Base):
     username = Column(String(255), index=True, nullable=True)
     bnb_address = Column(String(255), nullable=True)
     balance_slh = Column(Numeric(24, 6), nullable=False, default=0)
+    language = Column(String(8), nullable=False, default="en")
 
 
 class Transaction(Base):

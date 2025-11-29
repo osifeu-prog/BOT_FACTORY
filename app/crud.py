@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from app import models
 
 
-def get_or_create_user(db: Session, telegram_id: int, username: str | None):
+def get_or_create_user(
+    db: Session, telegram_id: int, username: str | None, language: str | None = None
+):
     """
     מאתר משתמש לפי telegram_id; אם לא קיים – יוצר עם balance_slh=0.
     """
@@ -18,6 +20,7 @@ def get_or_create_user(db: Session, telegram_id: int, username: str | None):
             telegram_id=telegram_id,
             username=username,
             balance_slh=Decimal("0"),
+            language=language or None,
         )
         db.add(user)
         db.commit()
@@ -30,6 +33,15 @@ def set_bnb_address(db: Session, user: models.User, address: str):
     מעדכן את כתובת ה-BNB של המשתמש.
     """
     user.bnb_address = address
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def set_language(db: Session, user: models.User, language: str):
+    """Update the user's preferred language."""
+    user.language = language
     db.add(user)
     db.commit()
     db.refresh(user)

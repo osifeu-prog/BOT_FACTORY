@@ -7,6 +7,7 @@ class UserBase(BaseModel):
     telegram_id: int
     username: Optional[str] = None
     bnb_address: Optional[str] = None
+    language: Optional[str] = None
 
 
 class UserOut(UserBase):
