@@ -9,41 +9,42 @@ class Settings(BaseSettings):
     DATABASE_URL: str | None = None
     SECRET_KEY: str = secrets.token_urlsafe(32)
 
-    # אדמין (לפקודות admin_credit / admin_menu)
+    # אדמין (לפקודות admin_credit / admin_menu וכו')
     ADMIN_USER_ID: str | None = None
 
     # כתובת בסיס ל־Webhook (למשל: https://tease-production.up.railway.app)
     WEBHOOK_URL: str | None = None
 
-    # --- הגדרות SLH / BSC / דוקומנטציה ---
-
-    # ארנק קהילה (לקבלות / מעקב השקעות)
+    # --- ארנק קהילתי / טוקן ---
     COMMUNITY_WALLET_ADDRESS: str | None = None
+    COMMUNITY_WALLET_PRIVATE_KEY: str | None = None
 
-    # כתובת טוקן SLH על BSC
     SLH_TOKEN_ADDRESS: str | None = None
+    SLH_TOKEN_DECIMALS: int = 18
 
-    # מחיר נומינלי של SLH בש"ח (למשקיעים) – ברירת מחדל 444
-    SLH_PRICE_NIS: Decimal | int | float = 444
+    # מחיר נומינלי ל-SLH בשקלים
+    SLH_PRICE_NIS: Decimal = Decimal("444")
 
-    # RPC של BSC mainnet – לדוגמה:
-    # https://bsc-dataseed.binance.org
+    # --- BSC / On-chain ---
     BSC_RPC_URL: str | None = None
-
-    # כתובת בסיס של BscScan
     BSC_SCAN_BASE: str | None = "https://bscscan.com"
 
-    # לינק חיצוני לקניית BNB (Binance / שירות אחר)
+    # --- לינקים חיצוניים ---
     BUY_BNB_URL: str | None = None
-
-    # לינק חיצוני למידע על Staking (אפשר דף באתר שלך)
     STAKING_INFO_URL: str | None = None
-
-    # לינק לדפי DOCS של המשקיעים (GitHub Pages וכו')
     DOCS_URL: str | None = None
+    PUBLIC_BASE_URL: str | None = None
 
-    # מספר דצימלים של טוקן SLH ברשת (לפי החוזה – כרגע הגדרנו 15 ב-ENV)
-    SLH_TOKEN_DECIMALS: int = 18
+    # --- קבוצות / לוגים בטלגרם ---
+    MAIN_COMMUNITY_CHAT_ID: str | None = None
+    LOG_NEW_USERS_CHAT_ID: str | None = None
+    LOG_TRANSACTIONS_CHAT_ID: str | None = None
+    LOG_ERRORS_CHAT_ID: str | None = None
+    REFERRAL_LOGS_CHAT_ID: str | None = None
+
+    # --- שפות ---
+    DEFAULT_LANGUAGE: str = "en"
+    SUPPORTED_LANGUAGES: str | None = None  # למשל: "en,he,ru,es"
 
     class Config:
         env_file = ".env"
