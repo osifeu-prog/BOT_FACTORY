@@ -1,3 +1,5 @@
+import datetime as dt
+
 from sqlalchemy import (
     Column,
     BigInteger,
@@ -5,42 +7,74 @@ from sqlalchemy import (
     Numeric,
     DateTime,
     Integer,
+    Boolean,
+    func,
 )
-from sqlalchemy.sql import func
 
-from app.database import Base
+from .database import Base
 
 
 class User(Base):
-    """
-    טבלת משתמשים – מותאם לסכימה הקיימת בפוסטגרס.
-
-    חשוב:
-    - אין עמודה id.
-    - telegram_id הוא ה-Primary Key.
-    """
-
     __tablename__ = "users"
 
-    telegram_id = Column(BigInteger, primary_key=True, index=True)
-    username = Column(String(255), index=True, nullable=True)
-    bnb_address = Column(String(255), nullable=True)
-    balance_slh = Column(Numeric(24, 6), nullable=False, default=0)
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
+    username = Column(String, index=True, nullable=True)
+    bnb_address = Column(String, nullable=True)
+    balance_slh = Column(Numeric(20, 8), default=0)
+    created_at = Column(DateTime, default=dt.datetime.utcnow)
+    updated_at = Column(
+        DateTime,
+        default=dt.datetime.utcnow,
+        onupdate=dt.datetime.utcnow,
+    )
 
 
 class Transaction(Base):
-    """
-    טבלת טרנזקציות פנימיות (Off-Chain Ledger).
-    """
-
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    tx_type = Column(
+        String,
+        nullable=False,
+    )  # admin_credit / admin_debit / internal_transfer
+    from_user = Column(BigInteger, nullable=True)  # Telegram ID
+    to_user = Column(BigInteger, nullable=True)  # Telegram ID
+    amount_slh = Column(Numeric(20, 8), nullable=False)
+    created_at = Column(DateTime, default=dt.datetime.utcnow)
+    note = Column(String, nullable=True)
 
-    # מזהי טלגרם (לא FK פורמלי, פשוט שמירה של ה-ID)
-    from_user = Column(BigInteger, nullable=True)
-    to_user = Column(BigInteger, nullable=True)
 
-    amount_slh = Column(Numeric(24, 6), nullable=False)
-    tx_type = Column(String(50), nullable=False)
+# =========================
+#  רפררלים + SELA פנימי
+# =========================
+
+class ReferralLink(Base):
+    """
+    קישור הפניה בסיסי לכל משתמש.
+    לדוגמה: https://t.me/<bot>?start=ref_<telegram_id>
+    שדה code מאפשר בעתיד לייצר קודים שונים (קמפיינים).
+    """
+    __tablename__ = "referral_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    owner_telegram_id = Column(BigInteger, index=True, nullable=False)
+    code = Column(String, unique=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=dt.datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
+
+class ReferralReward(Base):
+    """
+    לוג של כל “אירוע SELA”:
+    - פרס על שיתוף (0.00001 SELA)
+    - פרס על הפקדה (1 SELA לכל 10,000 ₪)
+    """
+    __tablename__ = "referral_rewards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_id = Column(BigInteger, index=True, nullable=False)
+    delta_sela = Column(Numeric(20, 8), nullable=False)
+    reason = Column(String, nullable=True)  # "share", "deposit_bonus", ...
+    meta = Column(String, nullable=True)  # שדה טקסט חופשי (קמפיין, tx id וכו')
+    created_at = Column(DateTime, default=dt.datetime.utcnow)
