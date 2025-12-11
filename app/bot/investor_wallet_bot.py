@@ -1153,4 +1153,244 @@ class InvestorWalletBot:
         await update.message.reply_text("pong")
 
     async def cmd_admin_selftest(
-        self,
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        """אדמין בלבד: מריץ self-test עמוק ומציג דו\"ח מצב."""
+        if not self._is_admin(update.effective_user.id):
+            await update.message.reply_text("This command is admin-only.")
+            return
+
+        result = run_selftest(quick=False)
+        status = result.get("status", "unknown")
+        checks = result.get("checks", {})
+
+        lines: list[str] = []
+        lines.append(f"Self-test status: {status}")
+        lines.append("")
+
+        for name, check in checks.items():
+            ok = check.get("ok", False)
+            skipped = check.get("skipped", False)
+
+            if ok and not skipped:
+                lines.append(f"✅ {name}")
+            elif skipped:
+                reason = check.get("reason", "")
+                lines.append(f"⚪ {name} – skipped ({reason})")
+            else:
+                err = check.get("error", "unknown error")
+                lines.append(f"❌ {name} – {err}")
+
+        await update.message.reply_text("\n".join(lines))
+
+    # ===== Callback handlers =====
+
+    async def cb_wallet_menu(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        query = update.callback_query
+        await query.answer()
+        data = query.data
+
+        if data == "WALLET_BALANCE":
+            fake_update = Update(update.update_id, message=query.message)
+            await self.cmd_balance(fake_update, context)
+        elif data == "WALLET_DETAILS":
+            fake_update = Update(update.update_id, message=query.message)
+            await self.cmd_wallet(fake_update, context)
+        elif data == "WALLET_BUY_BNB":
+            if settings.BUY_BNB_URL:
+                await query.edit_message_text(
+                    f"Suggested BNB provider:\n{settings.BUY_BNB_URL}"
+                )
+            else:
+                await query.edit_message_text(
+                    "BUY_BNB_URL not set in environment variables."
+                )
+
+    async def cb_main_menu(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        """כפתורי MENU_* עבור המשקיע."""
+        query = update.callback_query
+        await query.answer()
+        data = query.data
+
+        fake_update = Update(update.update_id, message=query.message)
+
+        if data == "MENU_SUMMARY":
+            await self.cmd_summary(fake_update, context)
+        elif data == "MENU_BALANCE":
+            await self.cmd_balance(fake_update, context)
+        elif data == "MENU_WALLET":
+            await self.cmd_wallet(fake_update, context)
+        elif data == "MENU_LINK_WALLET":
+            await self.cmd_link_wallet(fake_update, context)
+        elif data == "MENU_HISTORY":
+            await self.cmd_history(fake_update, context)
+        elif data == "MENU_TRANSFER":
+            await self.cmd_transfer(fake_update, context)
+        elif data == "MENU_DOCS":
+            await self.cmd_docs(fake_update, context)
+
+    async def cb_admin_menu(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        """כפתורי ADMIN_* עבור אדמין."""
+        query = update.callback_query
+        await query.answer()
+        data = query.data
+
+        if not self._is_admin(query.from_user.id):
+            await query.edit_message_text("Admin only.")
+            return
+
+        if data == "ADMIN_HELP_CREDIT":
+            text = (
+                "Admin credit tool:\n\n"
+                "Use:\n"
+                "/admin_credit <telegram_id> <amount>\n\n"
+                "Example:\n"
+                "/admin_credit 224223270 199999.877\n\n"
+                "This will create an internal ledger transaction and update "
+                "the user's off-chain SLH balance."
+            )
+            await query.edit_message_text(text)
+        elif data == "ADMIN_HELP_HISTORY":
+            text = (
+                "Ledger overview:\n\n"
+                "For now, use /history from a user account to see their last 10 transactions,\n"
+                "or /admin_ledger to see the global last 50 transactions.\n"
+                "In future iterations we can add global admin views and filters."
+            )
+            await query.edit_message_text(text)
+
+    # ===== Text handler =====
+
+    async def handle_text(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        state = context.user_data.get("state")
+        text = (update.message.text or "").strip()
+
+        db = self._db()
+        try:
+            tg_user = update.effective_user
+            user = crud.get_or_create_user(
+                db,
+                telegram_id=tg_user.id,
+                username=tg_user.username,
+            )
+
+            if state == STATE_AWAITING_BNB_ADDRESS:
+                context.user_data["state"] = None
+
+                if not text.startswith("0x") or len(text) < 20:
+                    await update.message.reply_text(
+                        "Address seems invalid.\nTry again with /link_wallet."
+                    )
+                    return
+
+                crud.set_bnb_address(db, user, text)
+                await update.message.reply_text(
+                    f"Your BNB address was saved:\n{text}"
+                )
+                return
+
+            if state == STATE_AWAITING_TRANSFER_TARGET:
+                if not text.startswith("@"):
+                    await update.message.reply_text(
+                        "Send a username starting with @username"
+                    )
+                    return
+
+                context.user_data["transfer_target_username"] = text[1:]
+                context.user_data["state"] = (
+                    STATE_AWAITING_TRANSFER_AMOUNT
+                )
+                await update.message.reply_text(
+                    f"Great.\nNow type the SLH amount you want to transfer to {text}."
+                )
+                return
+
+            if state == STATE_AWAITING_TRANSFER_AMOUNT:
+                context.user_data["state"] = None
+
+                try:
+                    amount = float(text.replace(",", ""))
+                except ValueError:
+                    await update.message.reply_text(
+                        "Could not read amount.\nTry again with /transfer."
+                    )
+                    return
+
+                if amount <= 0:
+                    await update.message.reply_text(
+                        "Amount must be greater than zero."
+                    )
+                    return
+
+                target_username = context.user_data.get(
+                    "transfer_target_username"
+                )
+                if not target_username:
+                    await update.message.reply_text(
+                        "Target not found.\nTry again with /transfer."
+                    )
+                    return
+
+                receiver = (
+                    db.query(models.User)
+                    .filter(models.User.username == target_username)
+                    .first()
+                )
+
+                if not receiver:
+                    await update.message.reply_text(
+                        "No user with that username in the system.\n"
+                        "They must send /start once before receiving transfers."
+                    )
+                    return
+
+                try:
+                    tx = crud.internal_transfer(
+                        db,
+                        sender=user,
+                        receiver=receiver,
+                        amount_slh=amount,
+                    )
+                except ValueError:
+                    await update.message.reply_text(
+                        "Insufficient balance for this transfer."
+                    )
+                    return
+
+                await update.message.reply_text(
+                    "Transfer completed:\n"
+                    f"{amount:.4f} SLH -> @{receiver.username or receiver.telegram_id}\n"
+                    f"Transaction ID: {tx.id}"
+                )
+                return
+
+            # no special state – הודעה חופשית
+            await update.message.reply_text(
+                "Command not recognized.\nUse /help to see available commands."
+            )
+        finally:
+            db.close()
+
+
+_bot_instance = InvestorWalletBot()
+
+
+async def initialize_bot():
+    await _bot_instance.initialize()
+
+
+async def process_webhook(update_dict: dict):
+    if not _bot_instance.application:
+        logger.error("Application is not initialized")
+        return
+
+    update = Update.de_json(update_dict, _bot_instance.application.bot)
+    await _bot_instance.application.process_update(update)
