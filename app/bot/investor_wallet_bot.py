@@ -63,10 +63,10 @@ class InvestorWalletBot:
         context: ContextTypes.DEFAULT_TYPE | None = None,
     ) -> str:
         """
-        ×§×•×‘×¢ ×گ×ھ ×”×©×¤×” ×¢×‘×•×¨ ×‍×©×ھ×‍×©:
-        1. ×گ×‌ ×™×© override ×‘-context.user_data["lang"] â€“ ×‍×©×ھ×‍×©×™×‌ ×‘×•.
-        2. ×گ×—×¨×ھ ×œ×¤×™ language_code ×‍×ک×œ×’×¨×‌.
-        3. ×گ×—×¨×ھ DEFAULT_LANGUAGE.
+        أ—آ§أ—â€¢أ—â€کأ—آ¢ أ—ع¯أ—ع¾ أ—â€‌أ—آ©أ—آ¤أ—â€‌ أ—آ¢أ—â€کأ—â€¢أ—آ¨ أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ©:
+        1. أ—ع¯أ—â€Œ أ—â„¢أ—آ© override أ—â€ک-context.user_data["lang"] أ¢â‚¬â€œ أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ©أ—â„¢أ—â€Œ أ—â€کأ—â€¢.
+        2. أ—ع¯أ—â€”أ—آ¨أ—ع¾ أ—إ“أ—آ¤أ—â„¢ language_code أ—â€چأ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ.
+        3. أ—ع¯أ—â€”أ—آ¨أ—ع¾ DEFAULT_LANGUAGE.
         """
         override = None
         if context is not None:
@@ -84,9 +84,9 @@ class InvestorWalletBot:
         self, tg_user
     ) -> tuple[models.User, bool]:
         """
-        ×‍×—×–×™×¨ (user, is_new):
-        - ×گ×‌ ×”×‍×©×ھ×‍×© ×œ×گ ×§×™×™×‌ ×‘×ک×‘×œ×” -> ×™×•×¦×¨ ×گ×•×ھ×•, is_new = True
-        - ×گ×‌ ×§×™×™×‌ -> ×‍×¢×“×›×ں username ×گ×‌ ×¦×¨×™×ڑ, is_new = False
+        أ—â€چأ—â€”أ—â€“أ—â„¢أ—آ¨ (user, is_new):
+        - أ—ع¯أ—â€Œ أ—â€‌أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—إ“أ—ع¯ أ—آ§أ—â„¢أ—â„¢أ—â€Œ أ—â€کأ—ع©أ—â€کأ—إ“أ—â€‌ -> أ—â„¢أ—â€¢أ—آ¦أ—آ¨ أ—ع¯أ—â€¢أ—ع¾أ—â€¢, is_new = True
+        - أ—ع¯أ—â€Œ أ—آ§أ—â„¢أ—â„¢أ—â€Œ -> أ—â€چأ—آ¢أ—â€œأ—â€؛أ—ع؛ username أ—ع¯أ—â€Œ أ—آ¦أ—آ¨أ—â„¢أ—ع‘, is_new = False
         """
         db = self._db()
         try:
@@ -108,7 +108,7 @@ class InvestorWalletBot:
                 db.refresh(user)
                 is_new = True
             else:
-                # ×¢×“×›×•×ں username ×گ×‌ ×”×©×ھ× ×” ×‘×ک×œ×’×¨×‌
+                # أ—آ¢أ—â€œأ—â€؛أ—â€¢أ—ع؛ username أ—ع¯أ—â€Œ أ—â€‌أ—آ©أ—ع¾أ—آ أ—â€‌ أ—â€کأ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ
                 if tg_user.username and user.username != tg_user.username:
                     user.username = tg_user.username
                     db.add(user)
@@ -121,7 +121,7 @@ class InvestorWalletBot:
 
     def _ensure_user(self, update: Update) -> models.User:
         """
-        ×œ×©×™×‍×•×© ×‘×©×گ×¨ ×”×¤×§×•×“×•×ھ â€“ ×‍×—×–×™×¨ ×ھ×‍×™×“ user, ×‘×œ×™ ×œ×”×ھ×¢×،×§ ×‘-is_new.
+        أ—إ“أ—آ©أ—â„¢أ—â€چأ—â€¢أ—آ© أ—â€کأ—آ©أ—ع¯أ—آ¨ أ—â€‌أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾ أ¢â‚¬â€œ أ—â€چأ—â€”أ—â€“أ—â„¢أ—آ¨ أ—ع¾أ—â€چأ—â„¢أ—â€œ user, أ—â€کأ—إ“أ—â„¢ أ—إ“أ—â€‌أ—ع¾أ—آ¢أ—طŒأ—آ§ أ—â€ک-is_new.
         """
         tg_user = update.effective_user
         user, _ = self._get_or_create_user_with_flag(tg_user)
@@ -131,8 +131,8 @@ class InvestorWalletBot:
         self, tg_user, user: models.User
     ) -> None:
         """
-        ×œ×•×’ ×¢×œ ×‍×©×ھ×‍×© ×—×“×© ×œ×§×‘×•×¦×”/×¢×¨×•×¥ ×©×‍×•×’×“×¨ ×‘-LOG_NEW_USERS_CHAT_ID.
-        ×¨×¥ ×¨×§ ×›×گ×©×¨ ×”×‍×©×ھ×‍×© × ×•×¦×¨ ×¢×›×©×™×• (is_new=True).
+        أ—إ“أ—â€¢أ—â€™ أ—آ¢أ—إ“ أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—â€”أ—â€œأ—آ© أ—إ“أ—آ§أ—â€کأ—â€¢أ—آ¦أ—â€‌/أ—آ¢أ—آ¨أ—â€¢أ—آ¥ أ—آ©أ—â€چأ—â€¢أ—â€™أ—â€œأ—آ¨ أ—â€ک-LOG_NEW_USERS_CHAT_ID.
+        أ—آ¨أ—آ¥ أ—آ¨أ—آ§ أ—â€؛أ—ع¯أ—آ©أ—آ¨ أ—â€‌أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—آ أ—â€¢أ—آ¦أ—آ¨ أ—آ¢أ—â€؛أ—آ©أ—â„¢أ—â€¢ (is_new=True).
         """
         chat_id = settings.LOG_NEW_USERS_CHAT_ID
         if not chat_id:
@@ -140,20 +140,20 @@ class InvestorWalletBot:
 
         if not self.application or not self.application.bot:
             logger.warning(
-                "Cannot log new investor â€“ application.bot is not ready"
+                "Cannot log new investor أ¢â‚¬â€œ application.bot is not ready"
             )
             return
 
         target_chat = chat_id
-        # × × ×،×” ×œ×”×‍×™×¨ ×œ-int ×گ×‌ ×–×” ×‍×،×¤×¨ (×›×•×œ×œ ×¢×¨×•×¦×™ -100...)
+        # أ—آ أ—آ أ—طŒأ—â€‌ أ—إ“أ—â€‌أ—â€چأ—â„¢أ—آ¨ أ—إ“-int أ—ع¯أ—â€Œ أ—â€“أ—â€‌ أ—â€چأ—طŒأ—آ¤أ—آ¨ (أ—â€؛أ—â€¢أ—إ“أ—إ“ أ—آ¢أ—آ¨أ—â€¢أ—آ¦أ—â„¢ -100...)
         try:
             target_chat = int(chat_id)
         except ValueError:
-            # ×گ×‌ ×–×” ×œ×گ ×‍×،×¤×¨, × ×©×گ×™×¨ ×‍×—×¨×•×–×ھ
+            # أ—ع¯أ—â€Œ أ—â€“أ—â€‌ أ—إ“أ—ع¯ أ—â€چأ—طŒأ—آ¤أ—آ¨, أ—آ أ—آ©أ—ع¯أ—â„¢أ—آ¨ أ—â€چأ—â€”أ—آ¨أ—â€¢أ—â€“أ—ع¾
             pass
 
         lines: list[str] = []
-        lines.append("ًں†• New investor in SLH Global Investments")
+        lines.append("ظ‹ع؛â€ â€¢ New investor in SLH Global Investments")
         lines.append(f"Telegram ID: {tg_user.id}")
         if tg_user.username:
             lines.append(f"Username: @{tg_user.username}")
@@ -238,7 +238,7 @@ class InvestorWalletBot:
             CommandHandler("language", self.cmd_language)
         )
 
-        # NEW: quick health check command (×œ×›×•×œ×‌)
+        # NEW: quick health check command (أ—إ“أ—â€؛أ—â€¢أ—إ“أ—â€Œ)
         self.application.add_handler(CommandHandler("ping", self.cmd_ping))
 
         # Admin-only commands
@@ -260,7 +260,7 @@ class InvestorWalletBot:
             CommandHandler("admin_selftest", self.cmd_admin_selftest)
         )
 
-        # Callback for inline buttons â€“ ×‍×©×§×™×¢×™×‌
+        # Callback for inline buttons أ¢â‚¬â€œ أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢أ—â„¢أ—â€Œ
         self.application.add_handler(
             CallbackQueryHandler(self.cb_wallet_menu, pattern=r"^WALLET_")
         )
@@ -268,12 +268,12 @@ class InvestorWalletBot:
             CallbackQueryHandler(self.cb_main_menu, pattern=r"^MENU_")
         )
 
-        # Callback ×œ×©×¤×”
+        # Callback أ—إ“أ—آ©أ—آ¤أ—â€‌
         self.application.add_handler(
             CallbackQueryHandler(self.cb_language, pattern=r"^LANG_")
         )
 
-        # Callback ×œ×گ×“×‍×™×ں
+        # Callback أ—إ“أ—ع¯أ—â€œأ—â€چأ—â„¢أ—ع؛
         self.application.add_handler(
             CallbackQueryHandler(self.cb_admin_menu, pattern=r"^ADMIN_")
         )
@@ -286,7 +286,7 @@ class InvestorWalletBot:
             )
         )
 
-        # ×—×•×‘×” ×‘-ptb v21 ×œ×¤× ×™ process_update
+        # أ—â€”أ—â€¢أ—â€کأ—â€‌ أ—â€ک-ptb v21 أ—إ“أ—آ¤أ—آ أ—â„¢ process_update
         await self.application.initialize()
 
         # Webhook mode
@@ -306,14 +306,14 @@ class InvestorWalletBot:
     # ===== Helpers =====
 
     def _slh_price_nis(self) -> Decimal:
-        """×‍×—×™×¨ SLH ×‘× ×™×، (×‘×¨×™×¨×ھ ×‍×—×“×œ: 444) ×›-Decimal."""
+        """أ—â€چأ—â€”أ—â„¢أ—آ¨ SLH أ—â€کأ—آ أ—â„¢أ—طŒ (أ—â€کأ—آ¨أ—â„¢أ—آ¨أ—ع¾ أ—â€چأ—â€”أ—â€œأ—إ“: 444) أ—â€؛-Decimal."""
         try:
             return Decimal(str(settings.SLH_PRICE_NIS))
         except Exception:
             return Decimal("444")
 
     def _investor_tier(self, balance: Decimal) -> str:
-        """×”×’×“×¨×ھ tier ×‍×©×§×™×¢ ×œ×¤×™ ×™×ھ×¨×ھ SLH."""
+        """أ—â€‌أ—â€™أ—â€œأ—آ¨أ—ع¾ tier أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢ أ—إ“أ—آ¤أ—â„¢ أ—â„¢أ—ع¾أ—آ¨أ—ع¾ SLH."""
         if balance >= Decimal("500000"):
             return " Ultra Strategic"
         if balance >= Decimal("100000"):
@@ -322,7 +322,7 @@ class InvestorWalletBot:
             return " Core"
         if balance > 0:
             return " Early"
-        return "â€”"
+        return "أ¢â‚¬â€‌"
 
     def _is_admin(self, user_id: int) -> bool:
         admin_id = settings.ADMIN_USER_ID
@@ -330,8 +330,8 @@ class InvestorWalletBot:
 
     def _referral_reward_amount(self) -> Decimal:
         """
-        ×’×•×‘×” ×”×‘×•× ×•×، ×œ×›×œ ×”×¦×ک×¨×¤×•×ھ ×“×¨×ڑ ×§×™×©×•×¨ ×”×¤× ×™×” (SLHA).
-        × ×©×œ×ک ×¢"×™ SLHA_REWARD_REFERRAL, ×‘×¨×™×¨×ھ ×‍×—×“×œ 0.00001.
+        أ—â€™أ—â€¢أ—â€کأ—â€‌ أ—â€‌أ—â€کأ—â€¢أ—آ أ—â€¢أ—طŒ أ—إ“أ—â€؛أ—إ“ أ—â€‌أ—آ¦أ—ع©أ—آ¨أ—آ¤أ—â€¢أ—ع¾ أ—â€œأ—آ¨أ—ع‘ أ—آ§أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—â€‌أ—آ¤أ—آ أ—â„¢أ—â€‌ (SLHA).
+        أ—آ أ—آ©أ—إ“أ—ع© أ—آ¢"أ—â„¢ SLHA_REWARD_REFERRAL, أ—â€کأ—آ¨أ—â„¢أ—آ¨أ—ع¾ أ—â€چأ—â€”أ—â€œأ—إ“ 0.00001.
         """
         try:
             val = Decimal(str(settings.SLHA_REWARD_REFERRAL))
@@ -347,15 +347,15 @@ class InvestorWalletBot:
         referrer_tid: int,
     ) -> Decimal:
         """
-        ×‍×¢× ×™×§ ×‘×•× ×•×، SLHA ×œ×‍×¤× ×” (×•×’×‌ ×œ×‍×•×¤× ×”), ×•×¨×•×©×‌ ×ک×¨× ×–×§×¦×™×” ×‍×،×•×’ referral_bonus_slha.
-        ×‍×—×–×™×¨ ×گ×ھ ×،×›×•×‌ ×”×‘×•× ×•×، ×©× ×–×§×£ ×œ×‍×¤× ×”.
+        أ—â€چأ—آ¢أ—آ أ—â„¢أ—آ§ أ—â€کأ—â€¢أ—آ أ—â€¢أ—طŒ SLHA أ—إ“أ—â€چأ—آ¤أ—آ أ—â€‌ (أ—â€¢أ—â€™أ—â€Œ أ—إ“أ—â€چأ—â€¢أ—آ¤أ—آ أ—â€‌), أ—â€¢أ—آ¨أ—â€¢أ—آ©أ—â€Œ أ—ع©أ—آ¨أ—آ أ—â€“أ—آ§أ—آ¦أ—â„¢أ—â€‌ أ—â€چأ—طŒأ—â€¢أ—â€™ referral_bonus_slha.
+        أ—â€چأ—â€”أ—â€“أ—â„¢أ—آ¨ أ—ع¯أ—ع¾ أ—طŒأ—â€؛أ—â€¢أ—â€Œ أ—â€‌أ—â€کأ—â€¢أ—آ أ—â€¢أ—طŒ أ—آ©أ—آ أ—â€“أ—آ§أ—آ£ أ—إ“أ—â€چأ—آ¤أ—آ أ—â€‌.
         """
         reward = self._referral_reward_amount()
         if reward <= 0:
             return Decimal("0")
 
         if new_user_tid == referrer_tid:
-            # ×œ×گ × ×•×ھ× ×™×‌ ×¨×¤×¨×¨×œ ×œ×¢×¦×‍×™
+            # أ—إ“أ—ع¯ أ—آ أ—â€¢أ—ع¾أ—آ أ—â„¢أ—â€Œ أ—آ¨أ—آ¤أ—آ¨أ—آ¨أ—إ“ أ—إ“أ—آ¢أ—آ¦أ—â€چأ—â„¢
             return Decimal("0")
 
         db = self._db()
@@ -374,21 +374,21 @@ class InvestorWalletBot:
             if not referrer or not new_user:
                 return Decimal("0")
 
-            # ×¢×“×›×•×ں SLHA balance â€“ ×‍×¤× ×”
+            # أ—آ¢أ—â€œأ—â€؛أ—â€¢أ—ع؛ SLHA balance أ¢â‚¬â€œ أ—â€چأ—آ¤أ—آ أ—â€‌
             current_ref = getattr(referrer, "slha_balance", None)
             if current_ref is None:
                 referrer.slha_balance = reward
             else:
                 referrer.slha_balance = current_ref + reward
 
-            # ×¢×“×›×•×ں SLHA balance â€“ ×‍×©×ھ×‍×© ×—×“×© (×گ×¤×©×¨ ×œ×©× ×•×ھ ×œض¾0 ×گ×‌ ×œ×گ ×¨×•×¦×™×‌ ×œ×ھ×ھ ×œ×•)
+            # أ—آ¢أ—â€œأ—â€؛أ—â€¢أ—ع؛ SLHA balance أ¢â‚¬â€œ أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—â€”أ—â€œأ—آ© (أ—ع¯أ—آ¤أ—آ©أ—آ¨ أ—إ“أ—آ©أ—آ أ—â€¢أ—ع¾ أ—إ“ط¶آ¾0 أ—ع¯أ—â€Œ أ—إ“أ—ع¯ أ—آ¨أ—â€¢أ—آ¦أ—â„¢أ—â€Œ أ—إ“أ—ع¾أ—ع¾ أ—إ“أ—â€¢)
             current_new = getattr(new_user, "slha_balance", None)
             if current_new is None:
                 new_user.slha_balance = reward
             else:
                 new_user.slha_balance = current_new + reward
 
-            # ×œ×•×’ ×‘-Transaction (amount_slh=0 â€“ ×–×” ×œ×•×’ ×‘×œ×‘×“ ×¢×‘×•×¨ SLHA)
+            # أ—إ“أ—â€¢أ—â€™ أ—â€ک-Transaction (amount_slh=0 أ¢â‚¬â€œ أ—â€“أ—â€‌ أ—إ“أ—â€¢أ—â€™ أ—â€کأ—إ“أ—â€کأ—â€œ أ—آ¢أ—â€کأ—â€¢أ—آ¨ SLHA)
             tx = models.Transaction(
                 tx_type="referral_bonus_slha",
                 from_user=None,
@@ -412,7 +412,7 @@ class InvestorWalletBot:
         reward: Decimal,
     ) -> None:
         """
-        ×©×•×œ×— ×”×•×“×¢×” ×œ×§×‘×•×¦×ھ REFERRAL_LOGS_CHAT_ID ×¢×œ ×¨×¤×¨×¨×œ ×—×“×©.
+        أ—آ©أ—â€¢أ—إ“أ—â€” أ—â€‌أ—â€¢أ—â€œأ—آ¢أ—â€‌ أ—إ“أ—آ§أ—â€کأ—â€¢أ—آ¦أ—ع¾ REFERRAL_LOGS_CHAT_ID أ—آ¢أ—إ“ أ—آ¨أ—آ¤أ—آ¨أ—آ¨أ—إ“ أ—â€”أ—â€œأ—آ©.
         """
         chat_id = settings.REFERRAL_LOGS_CHAT_ID
         if not chat_id:
@@ -432,7 +432,7 @@ class InvestorWalletBot:
         )
 
         lines: list[str] = []
-        lines.append("ًںژپ New referral registered")
+        lines.append("ظ‹ع؛عکظ¾ New referral registered")
         lines.append(f"New user: {new_tg_user.id} ({uname})")
         lines.append(f"Referrer: {referrer_tid}")
         lines.append(f"Reward credited: {reward:.8f} SLHA (to referrer + new user)")
@@ -447,8 +447,8 @@ class InvestorWalletBot:
 
     def _coming_soon_text(self, tg_user, context, module_key: str) -> str:
         """
-        ×‍×—×–×™×¨ ×ک×§×،×ک '×‘×§×¨×•×‘' ×¨×‘ض¾×œ×©×•× ×™ ×¢×‘×•×¨ ×‍×•×“×•×œ × ×ھ×•×ں.
-        module_key = ×گ×—×“ ×‍×”×‍×¤×ھ×—×•×ھ:
+        أ—â€چأ—â€”أ—â€“أ—â„¢أ—آ¨ أ—ع©أ—آ§أ—طŒأ—ع© 'أ—â€کأ—آ§أ—آ¨أ—â€¢أ—â€ک' أ—آ¨أ—â€کط¶آ¾أ—إ“أ—آ©أ—â€¢أ—آ أ—â„¢ أ—آ¢أ—â€کأ—â€¢أ—آ¨ أ—â€چأ—â€¢أ—â€œأ—â€¢أ—إ“ أ—آ أ—ع¾أ—â€¢أ—ع؛.
+        module_key = أ—ع¯أ—â€”أ—â€œ أ—â€چأ—â€‌أ—â€چأ—آ¤أ—ع¾أ—â€”أ—â€¢أ—ع¾:
             MODULE_NAME_STAKING / MODULE_NAME_SIGNALS / MODULE_NAME_ACADEMY /
             MODULE_NAME_REFERRALS / MODULE_NAME_REPORTS / MODULE_NAME_PORTFOLIO
         """
@@ -516,10 +516,10 @@ class InvestorWalletBot:
 
     def _language_keyboard(self) -> InlineKeyboardMarkup:
         """
-        ×›×¤×ھ×•×¨×™ ×‘×—×™×¨×ھ ×©×¤×”.
-        ×گ× ×—× ×• ×‘×•× ×™×‌ ×گ×•×ھ×‌ ×‍×ھ×•×ڑ i18n ×›×“×™ ×©×”×ک×§×،×ک ×™×”×™×” × ×›×•×ں ×œ×›×œ ×©×¤×”.
+        أ—â€؛أ—آ¤أ—ع¾أ—â€¢أ—آ¨أ—â„¢ أ—â€کأ—â€”أ—â„¢أ—آ¨أ—ع¾ أ—آ©أ—آ¤أ—â€‌.
+        أ—ع¯أ—آ أ—â€”أ—آ أ—â€¢ أ—â€کأ—â€¢أ—آ أ—â„¢أ—â€Œ أ—ع¯أ—â€¢أ—ع¾أ—â€Œ أ—â€چأ—ع¾أ—â€¢أ—ع‘ i18n أ—â€؛أ—â€œأ—â„¢ أ—آ©أ—â€‌أ—ع©أ—آ§أ—طŒأ—ع© أ—â„¢أ—â€‌أ—â„¢أ—â€‌ أ—آ أ—â€؛أ—â€¢أ—ع؛ أ—إ“أ—â€؛أ—إ“ أ—آ©أ—آ¤أ—â€‌.
         """
-        # × ×©×ھ×‍×© ×ھ×‍×™×“ ×‘×گ× ×’×œ×™×ھ ×œ×”×’×“×¨×ھ ×©×‍×•×ھ ×”×›×¤×ھ×•×¨×™×‌ (×گ×—×™×“ ×œ×›×•×œ×‌)
+        # أ—آ أ—آ©أ—ع¾أ—â€چأ—آ© أ—ع¾أ—â€چأ—â„¢أ—â€œ أ—â€کأ—ع¯أ—آ أ—â€™أ—إ“أ—â„¢أ—ع¾ أ—إ“أ—â€‌أ—â€™أ—â€œأ—آ¨أ—ع¾ أ—آ©أ—â€چأ—â€¢أ—ع¾ أ—â€‌أ—â€؛أ—آ¤أ—ع¾أ—â€¢أ—آ¨أ—â„¢أ—â€Œ (أ—ع¯أ—â€”أ—â„¢أ—â€œ أ—إ“أ—â€؛أ—â€¢أ—إ“أ—â€Œ)
         btn_en = i18n.t("en", "LANGUAGE_BUTTON_EN")
         btn_he = i18n.t("en", "LANGUAGE_BUTTON_HE")
         btn_ru = i18n.t("en", "LANGUAGE_BUTTON_RU")
@@ -547,18 +547,18 @@ class InvestorWalletBot:
     async def cmd_start(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×—×•×•×™×™×ھ ×”×¨×©×‍×”: ×‍×،×ڑ ×¤×ھ×™×—×” + ×”×،×‘×¨ ×‍×” ×¢×•×©×™×‌ ×¢×›×©×™×•, ×¢×‌ i18n + ×¨×¤×¨×¨×œ."""
+        """أ—â€”أ—â€¢أ—â€¢أ—â„¢أ—â„¢أ—ع¾ أ—â€‌أ—آ¨أ—آ©أ—â€چأ—â€‌: أ—â€چأ—طŒأ—ع‘ أ—آ¤أ—ع¾أ—â„¢أ—â€”أ—â€‌ + أ—â€‌أ—طŒأ—â€کأ—آ¨ أ—â€چأ—â€‌ أ—آ¢أ—â€¢أ—آ©أ—â„¢أ—â€Œ أ—آ¢أ—â€؛أ—آ©أ—â„¢أ—â€¢, أ—آ¢أ—â€Œ i18n + أ—آ¨أ—آ¤أ—آ¨أ—آ¨أ—إ“."""
         tg_user = update.effective_user
         lang = self._get_lang(tg_user, context)
 
-        # ×›×گ×ں ×‍×©×ھ×‍×©×™×‌ ×‘-is_new ×›×“×™ ×œ×–×”×•×ھ ×‍×©×ھ×‍×© ×—×“×© ×‘×œ×‘×“
+        # أ—â€؛أ—ع¯أ—ع؛ أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ©أ—â„¢أ—â€Œ أ—â€ک-is_new أ—â€؛أ—â€œأ—â„¢ أ—إ“أ—â€“أ—â€‌أ—â€¢أ—ع¾ أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—â€”أ—â€œأ—آ© أ—â€کأ—إ“أ—â€کأ—â€œ
         user, is_new = self._get_or_create_user_with_flag(tg_user)
 
-        # ×œ×•×’ ×œ×§×‘×•×¦×ھ ×œ×•×’×™×‌ ×¨×§ ×گ×‌ ×”×‍×©×ھ×‍×© ×—×“×©
+        # أ—إ“أ—â€¢أ—â€™ أ—إ“أ—آ§أ—â€کأ—â€¢أ—آ¦أ—ع¾ أ—إ“أ—â€¢أ—â€™أ—â„¢أ—â€Œ أ—آ¨أ—آ§ أ—ع¯أ—â€Œ أ—â€‌أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—â€”أ—â€œأ—آ©
         if is_new:
             await self._log_new_investor(tg_user, user)
 
-        # --- REFERRAL: /start ref_XXXX (×¤×•×¢×œ ×¨×§ ×‘×”×¨×©×‍×” ×”×¨×گ×©×•× ×”) ---
+        # --- REFERRAL: /start ref_XXXX (أ—آ¤أ—â€¢أ—آ¢أ—إ“ أ—آ¨أ—آ§ أ—â€کأ—â€‌أ—آ¨أ—آ©أ—â€چأ—â€‌ أ—â€‌أ—آ¨أ—ع¯أ—آ©أ—â€¢أ—آ أ—â€‌) ---
         if is_new and context.args:
             raw_code = context.args[0]
             if isinstance(raw_code, str) and raw_code.startswith("ref_"):
@@ -644,9 +644,9 @@ class InvestorWalletBot:
     async def cmd_menu(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×ھ×¤×¨×™×ک ×”×›×¤×ھ×•×¨×™×‌ ×”×¨×گ×©×™ ×œ×‍×©×§×™×¢."""
+        """أ—ع¾أ—آ¤أ—آ¨أ—â„¢أ—ع© أ—â€‌أ—â€؛أ—آ¤أ—ع¾أ—â€¢أ—آ¨أ—â„¢أ—â€Œ أ—â€‌أ—آ¨أ—ع¯أ—آ©أ—â„¢ أ—إ“أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢."""
         await update.message.reply_text(
-            "SLH Investor Menu â€“ choose an action:",
+            "SLH Investor Menu أ¢â‚¬â€œ choose an action:",
             reply_markup=self._main_menu_keyboard(),
         )
 
@@ -712,14 +712,14 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×©× ×™ ×‍×¦×‘×™×‌:
-        1) /link_wallet -> ×©×•×گ×œ ×گ×•×ھ×ڑ ×œ×©×œ×•×— ×›×ھ×•×‘×ھ ×‘×”×•×“×¢×” ×”×‘×گ×”
-        2) /link_wallet 0xABC... -> ×©×•×‍×¨ ×‍×™×“ ×گ×ھ ×”×›×ھ×•×‘×ھ ×‍×”×¤×§×•×“×”
+        أ—آ©أ—آ أ—â„¢ أ—â€چأ—آ¦أ—â€کأ—â„¢أ—â€Œ:
+        1) /link_wallet -> أ—آ©أ—â€¢أ—ع¯أ—إ“ أ—ع¯أ—â€¢أ—ع¾أ—ع‘ أ—إ“أ—آ©أ—إ“أ—â€¢أ—â€” أ—â€؛أ—ع¾أ—â€¢أ—â€کأ—ع¾ أ—â€کأ—â€‌أ—â€¢أ—â€œأ—آ¢أ—â€‌ أ—â€‌أ—â€کأ—ع¯أ—â€‌
+        2) /link_wallet 0xABC... -> أ—آ©أ—â€¢أ—â€چأ—آ¨ أ—â€چأ—â„¢أ—â€œ أ—ع¯أ—ع¾ أ—â€‌أ—â€؛أ—ع¾أ—â€¢أ—â€کأ—ع¾ أ—â€چأ—â€‌أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€‌
         """
         tg_user = update.effective_user
         self._ensure_user(update)
 
-        # ×گ×‌ × ×©×œ×—×” ×›×ھ×•×‘×ھ ×‘×ھ×•×ڑ ×”×¤×§×•×“×” ×¢×¦×‍×”
+        # أ—ع¯أ—â€Œ أ—آ أ—آ©أ—إ“أ—â€”أ—â€‌ أ—â€؛أ—ع¾أ—â€¢أ—â€کأ—ع¾ أ—â€کأ—ع¾أ—â€¢أ—ع‘ أ—â€‌أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€‌ أ—آ¢أ—آ¦أ—â€چأ—â€‌
         if context.args:
             addr = context.args[0].strip()
             if not addr.startswith("0x") or len(addr) < 20:
@@ -746,7 +746,7 @@ class InvestorWalletBot:
             context.user_data["state"] = None
             return
 
-        # ×‍×¦×‘ ×¨×’×™×œ â€“ ×‍×‘×§×© ×›×ھ×•×‘×ھ ×‘×”×•×“×¢×” ×”×‘×گ×”
+        # أ—â€چأ—آ¦أ—â€ک أ—آ¨أ—â€™أ—â„¢أ—إ“ أ¢â‚¬â€œ أ—â€چأ—â€کأ—آ§أ—آ© أ—â€؛أ—ع¾أ—â€¢أ—â€کأ—ع¾ أ—â€کأ—â€‌أ—â€¢أ—â€œأ—آ¢أ—â€‌ أ—â€‌أ—â€کأ—ع¯أ—â€‌
         context.user_data["state"] = STATE_AWAITING_BNB_ADDRESS
         await update.message.reply_text(
             "Please send your BNB address (BSC network, usually starts with 0x...)."
@@ -814,7 +814,7 @@ class InvestorWalletBot:
                 "This reflects allocations recorded for you inside the system."
             )
             lines.append(
-                "There is no redemption yet â€“ only future usage inside the ecosystem."
+                "There is no redemption yet أ¢â‚¬â€œ only future usage inside the ecosystem."
             )
 
             await update.message.reply_text("\n".join(lines))
@@ -824,7 +824,7 @@ class InvestorWalletBot:
     async def cmd_whoami(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """× ×•×ھ×ں ×—×•×•×™×™×ھ "×گ× ×™ ×¨×©×•×‌ ×‘×‍×¢×¨×›×ھ" + ×‍×¦×™×’ ×’×‌ SLHA."""
+        """أ—آ أ—â€¢أ—ع¾أ—ع؛ أ—â€”أ—â€¢أ—â€¢أ—â„¢أ—â„¢أ—ع¾ "أ—ع¯أ—آ أ—â„¢ أ—آ¨أ—آ©أ—â€¢أ—â€Œ أ—â€کأ—â€چأ—آ¢أ—آ¨أ—â€؛أ—ع¾" + أ—â€چأ—آ¦أ—â„¢أ—â€™ أ—â€™أ—â€Œ SLHA."""
         db = self._db()
         try:
             tg_user = update.effective_user
@@ -875,7 +875,7 @@ class InvestorWalletBot:
     async def cmd_summary(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×“×©×‘×•×¨×“ ×‍×©×§×™×¢ ×‘×‍×،×ڑ ×گ×—×“ â€“ ×›×•×œ×œ SLHA."""
+        """أ—â€œأ—آ©أ—â€کأ—â€¢أ—آ¨أ—â€œ أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢ أ—â€کأ—â€چأ—طŒأ—ع‘ أ—ع¯أ—â€”أ—â€œ أ¢â‚¬â€œ أ—â€؛أ—â€¢أ—إ“أ—إ“ SLHA."""
         db = self._db()
         try:
             tg_user = update.effective_user
@@ -959,7 +959,7 @@ class InvestorWalletBot:
                 onchain_bnb is not None or onchain_slh is not None
             ):
                 lines.append(
-                    "On-Chain (BNB Chain) â€“ based on your BNB address:"
+                    "On-Chain (BNB Chain) أ¢â‚¬â€œ based on your BNB address:"
                 )
                 if onchain_bnb is not None:
                     lines.append(f"- BNB: {onchain_bnb:.6f} BNB")
@@ -1007,7 +1007,7 @@ class InvestorWalletBot:
     async def cmd_docs(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×§×™×©×•×¨ ×œ×‍×،×‍×›×™ ×”-DOCS ×”×¨×©×‍×™×™×‌ (README ×œ×‍×©×§×™×¢×™×‌)."""
+        """أ—آ§أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—إ“أ—â€چأ—طŒأ—â€چأ—â€؛أ—â„¢ أ—â€‌-DOCS أ—â€‌أ—آ¨أ—آ©أ—â€چأ—â„¢أ—â„¢أ—â€Œ (README أ—إ“أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢أ—â„¢أ—â€Œ)."""
         if not settings.DOCS_URL:
             await update.message.reply_text(
                 "Investor docs URL is not configured yet.\n"
@@ -1035,8 +1035,8 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×‍×•×“×•×œ ×،×ک×™×™×§×™× ×’ â€“ ×›×¨×’×¢ placeholder ×¢×‌ ×”×•×“×¢×ھ '×‘×§×¨×•×‘' ×‘×›×œ ×”×©×¤×•×ھ.
-        ×‘×”×‍×©×ڑ × ×—×‘×¨ ×œ×›×گ×ں ×‍× ×•×¢ ×،×ک×™×™×§×™× ×’ ×گ×‍×™×ھ×™ (on/off-chain).
+        أ—â€چأ—â€¢أ—â€œأ—â€¢أ—إ“ أ—طŒأ—ع©أ—â„¢أ—â„¢أ—آ§أ—â„¢أ—آ أ—â€™ أ¢â‚¬â€œ أ—â€؛أ—آ¨أ—â€™أ—آ¢ placeholder أ—آ¢أ—â€Œ أ—â€‌أ—â€¢أ—â€œأ—آ¢أ—ع¾ 'أ—â€کأ—آ§أ—آ¨أ—â€¢أ—â€ک' أ—â€کأ—â€؛أ—إ“ أ—â€‌أ—آ©أ—آ¤أ—â€¢أ—ع¾.
+        أ—â€کأ—â€‌أ—â€چأ—آ©أ—ع‘ أ—آ أ—â€”أ—â€کأ—آ¨ أ—إ“أ—â€؛أ—ع¯أ—ع؛ أ—â€چأ—آ أ—â€¢أ—آ¢ أ—طŒأ—ع©أ—â„¢أ—â„¢أ—آ§أ—â„¢أ—آ أ—â€™ أ—ع¯أ—â€چأ—â„¢أ—ع¾أ—â„¢ (on/off-chain).
         """
         tg_user = update.effective_user
         _ = self._ensure_user(update)
@@ -1047,8 +1047,8 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×‍×•×“×•×œ ×گ×•×ھ×•×ھ ×‍×،×—×¨ â€“ placeholder.
-        ×‘×”×‍×©×ڑ: ×—×™×‘×•×¨ ×œ-API/AI ×©×™×™×ھ×ں ×،×™×’× ×œ×™×‌ ×œ×¤×™ ×¤×¨×•×¤×™×œ ×”×‍×©×§×™×¢.
+        أ—â€چأ—â€¢أ—â€œأ—â€¢أ—إ“ أ—ع¯أ—â€¢أ—ع¾أ—â€¢أ—ع¾ أ—â€چأ—طŒأ—â€”أ—آ¨ أ¢â‚¬â€œ placeholder.
+        أ—â€کأ—â€‌أ—â€چأ—آ©أ—ع‘: أ—â€”أ—â„¢أ—â€کأ—â€¢أ—آ¨ أ—إ“-API/AI أ—آ©أ—â„¢أ—â„¢أ—ع¾أ—ع؛ أ—طŒأ—â„¢أ—â€™أ—آ أ—إ“أ—â„¢أ—â€Œ أ—إ“أ—آ¤أ—â„¢ أ—آ¤أ—آ¨أ—â€¢أ—آ¤أ—â„¢أ—إ“ أ—â€‌أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢.
         """
         tg_user = update.effective_user
         _ = self._ensure_user(update)
@@ -1059,8 +1059,8 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×گ×§×“×‍×™×™×ھ SLH â€“ placeholder.
-        ×‘×”×‍×©×ڑ: ×ھ×›× ×™ ×œ×™×‍×•×“, ×§×•×¨×،×™×‌, '×©×™×¢×•×¨ ×œ×™×•×‌' ×•×›×•'.
+        أ—ع¯أ—آ§أ—â€œأ—â€چأ—â„¢أ—â„¢أ—ع¾ SLH أ¢â‚¬â€œ placeholder.
+        أ—â€کأ—â€‌أ—â€چأ—آ©أ—ع‘: أ—ع¾أ—â€؛أ—آ أ—â„¢ أ—إ“أ—â„¢أ—â€چأ—â€¢أ—â€œ, أ—آ§أ—â€¢أ—آ¨أ—طŒأ—â„¢أ—â€Œ, 'أ—آ©أ—â„¢أ—آ¢أ—â€¢أ—آ¨ أ—إ“أ—â„¢أ—â€¢أ—â€Œ' أ—â€¢أ—â€؛أ—â€¢'.
         """
         tg_user = update.effective_user
         _ = self._ensure_user(update)
@@ -1071,10 +1071,10 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×ھ×•×›× ×™×ھ ×”×¤× ×™×•×ھ â€“ ×¢×›×©×™×• LIVE:
-        - ×§×™×©×•×¨ ×گ×™×©×™: https://t.me/<bot>?start=ref_<telegram_id>
-        - ×،×¤×™×¨×ھ referrals
-        - ×”×¦×’×ھ ×™×ھ×¨×ھ SLHA
+        أ—ع¾أ—â€¢أ—â€؛أ—آ أ—â„¢أ—ع¾ أ—â€‌أ—آ¤أ—آ أ—â„¢أ—â€¢أ—ع¾ أ¢â‚¬â€œ أ—آ¢أ—â€؛أ—آ©أ—â„¢أ—â€¢ LIVE:
+        - أ—آ§أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—ع¯أ—â„¢أ—آ©أ—â„¢: https://t.me/<bot>?start=ref_<telegram_id>
+        - أ—طŒأ—آ¤أ—â„¢أ—آ¨أ—ع¾ referrals
+        - أ—â€‌أ—آ¦أ—â€™أ—ع¾ أ—â„¢أ—ع¾أ—آ¨أ—ع¾ SLHA
         """
         db = self._db()
         try:
@@ -1085,7 +1085,7 @@ class InvestorWalletBot:
                 username=tg_user.username,
             )
 
-            # ×§×‘×œ×ھ username ×©×œ ×”×‘×•×ک ×œ×¦×•×¨×ڑ ×§×™×©×•×¨ ×گ×™×©×™
+            # أ—آ§أ—â€کأ—إ“أ—ع¾ username أ—آ©أ—إ“ أ—â€‌أ—â€کأ—â€¢أ—ع© أ—إ“أ—آ¦أ—â€¢أ—آ¨أ—ع‘ أ—آ§أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—ع¯أ—â„¢أ—آ©أ—â„¢
             bot_username = None
             try:
                 if self.bot and self.bot.username:
@@ -1097,11 +1097,11 @@ class InvestorWalletBot:
                 logger.warning("Failed to get bot username: %s", e)
 
             if not bot_username:
-                link = "Unavailable â€“ bot username not resolved yet."
+                link = "Unavailable أ¢â‚¬â€œ bot username not resolved yet."
             else:
                 link = f"https://t.me/{bot_username}?start=ref_{tg_user.id}"
 
-            # ×،×ک×ک×™×،×ک×™×§×•×ھ ×¨×¤×¨×¨×œ×™×‌ â€“ ×œ×¤×™ Transactions ×‍×،×•×’ referral_bonus_slha
+            # أ—طŒأ—ع©أ—ع©أ—â„¢أ—طŒأ—ع©أ—â„¢أ—آ§أ—â€¢أ—ع¾ أ—آ¨أ—آ¤أ—آ¨أ—آ¨أ—إ“أ—â„¢أ—â€Œ أ¢â‚¬â€œ أ—إ“أ—آ¤أ—â„¢ Transactions أ—â€چأ—طŒأ—â€¢أ—â€™ referral_bonus_slha
             txs = (
                 db.query(models.Transaction)
                 .filter(
@@ -1114,7 +1114,7 @@ class InvestorWalletBot:
             referrals_count = len(txs)
             reward_per = self._referral_reward_amount()
 
-            # ×™×ھ×¨×ھ SLHA ×‘×¤×•×¢×œ â€“ ×‍×”×ک×‘×œ×”
+            # أ—â„¢أ—ع¾أ—آ¨أ—ع¾ SLHA أ—â€کأ—آ¤أ—â€¢أ—آ¢أ—إ“ أ¢â‚¬â€œ أ—â€چأ—â€‌أ—ع©أ—â€کأ—إ“أ—â€‌
             slha_balance = getattr(user, "slha_balance", None)
             if slha_balance is None:
                 slha_balance = Decimal("0")
@@ -1123,33 +1123,33 @@ class InvestorWalletBot:
 
             if lang == "he":
                 lines: list[str] = []
-                lines.append("×ھ×•×›× ×™×ھ ×”×¤× ×™×•×ھ â€“ SLH Global Investments")
+                lines.append("أ—ع¾أ—â€¢أ—â€؛أ—آ أ—â„¢أ—ع¾ أ—â€‌أ—آ¤أ—آ أ—â„¢أ—â€¢أ—ع¾ أ¢â‚¬â€œ SLH Global Investments")
                 lines.append("")
-                lines.append("×–×”×• ×”×§×™×©×•×¨ ×”×گ×™×©×™ ×©×œ×ڑ ×œ×©×™×ھ×•×£ (×—×‘×¨×™×‌, ×‍×©×¤×—×”, ×œ×§×•×—×•×ھ):")
+                lines.append("أ—â€“أ—â€‌أ—â€¢ أ—â€‌أ—آ§أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—â€‌أ—ع¯أ—â„¢أ—آ©أ—â„¢ أ—آ©أ—إ“أ—ع‘ أ—إ“أ—آ©أ—â„¢أ—ع¾أ—â€¢أ—آ£ (أ—â€”أ—â€کأ—آ¨أ—â„¢أ—â€Œ, أ—â€چأ—آ©أ—آ¤أ—â€”أ—â€‌, أ—إ“أ—آ§أ—â€¢أ—â€”أ—â€¢أ—ع¾):")
                 lines.append(link)
                 lines.append("")
-                lines.append(f"×‍×،×¤×¨ ×‍×¦×ک×¨×¤×™×‌ ×©×–×•×”×• ×“×¨×ڑ ×”×§×™×©×•×¨ ×©×œ×ڑ: {referrals_count}")
+                lines.append(f"أ—â€چأ—طŒأ—آ¤أ—آ¨ أ—â€چأ—آ¦أ—ع©أ—آ¨أ—آ¤أ—â„¢أ—â€Œ أ—آ©أ—â€“أ—â€¢أ—â€‌أ—â€¢ أ—â€œأ—آ¨أ—ع‘ أ—â€‌أ—آ§أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—آ©أ—إ“أ—ع‘: {referrals_count}")
                 lines.append(
-                    f"×™×ھ×¨×ھ SLHA ×¤× ×™×‍×™×ھ (× ×§×•×“×•×ھ ×‍×¢×¨×›×ھ): {slha_balance:.8f} SLHA"
+                    f"أ—â„¢أ—ع¾أ—آ¨أ—ع¾ SLHA أ—آ¤أ—آ أ—â„¢أ—â€چأ—â„¢أ—ع¾ (أ—آ أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾ أ—â€چأ—آ¢أ—آ¨أ—â€؛أ—ع¾): {slha_balance:.8f} SLHA"
                 )
                 lines.append("")
                 lines.append(
-                    f"×›×¨×’×¢, ×›×œ ×‍×¦×ک×¨×£ ×“×¨×ڑ ×”×§×™×©×•×¨ ×‍×–×›×” ×‘-{reward_per:.8f} SLHA "
-                    f"(â‰ˆ 1 â‚ھ × ×•×‍×™× ×œ×™) â€“ ×‍×—×•×œ×§ ×’×‌ ×œ×‍×¤× ×” ×•×’×‌ ×œ×‍×¦×ک×¨×£."
+                    f"أ—â€؛أ—آ¨أ—â€™أ—آ¢, أ—â€؛أ—إ“ أ—â€چأ—آ¦أ—ع©أ—آ¨أ—آ£ أ—â€œأ—آ¨أ—ع‘ أ—â€‌أ—آ§أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—â€چأ—â€“أ—â€؛أ—â€‌ أ—â€ک-{reward_per:.8f} SLHA "
+                    f"(أ¢â€°ث† 1 أ¢â€ڑع¾ أ—آ أ—â€¢أ—â€چأ—â„¢أ—آ أ—إ“أ—â„¢) أ¢â‚¬â€œ أ—â€چأ—â€”أ—â€¢أ—إ“أ—آ§ أ—â€™أ—â€Œ أ—إ“أ—â€چأ—آ¤أ—آ أ—â€‌ أ—â€¢أ—â€™أ—â€Œ أ—إ“أ—â€چأ—آ¦أ—ع©أ—آ¨أ—آ£."
                 )
                 lines.append("")
                 lines.append(
-                    "×”× ×§×•×“×•×ھ ×”×ں Off-Chain ×•×™×©×‍×©×• ×‘×”×‍×©×ڑ ×œ×،×ک×™×™×§×™× ×’, ×”×ک×‘×•×ھ, "
-                    "×’×™×©×” ×œ×‍×•×“×•×œ×™×‌ ×‍×ھ×§×“×‍×™×‌ ×•×œ-AI Trading Tutor."
+                    "أ—â€‌أ—آ أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾ أ—â€‌أ—ع؛ Off-Chain أ—â€¢أ—â„¢أ—آ©أ—â€چأ—آ©أ—â€¢ أ—â€کأ—â€‌أ—â€چأ—آ©أ—ع‘ أ—إ“أ—طŒأ—ع©أ—â„¢أ—â„¢أ—آ§أ—â„¢أ—آ أ—â€™, أ—â€‌أ—ع©أ—â€کأ—â€¢أ—ع¾, "
+                    "أ—â€™أ—â„¢أ—آ©أ—â€‌ أ—إ“أ—â€چأ—â€¢أ—â€œأ—â€¢أ—إ“أ—â„¢أ—â€Œ أ—â€چأ—ع¾أ—آ§أ—â€œأ—â€چأ—â„¢أ—â€Œ أ—â€¢أ—إ“-AI Trading Tutor."
                 )
                 lines.append("")
                 lines.append(
-                    "×›×›×œ ×©×ھ×©×ھ×£ ×™×•×ھ×¨ ×•×ھ×‘× ×” ×¨×©×ھ ×‍×©×§×™×¢×™×‌ ×،×‘×™×‘×ڑ, ×›×ڑ ×ھ×•×›×œ/×™ ×œ×¤×ھ×•×— "
-                    "×¢×•×“ ×©×›×‘×•×ھ ×‘×گ×§×•-×،×™×،×ک×‌ ×©×œ SLH."
+                    "أ—â€؛أ—â€؛أ—إ“ أ—آ©أ—ع¾أ—آ©أ—ع¾أ—آ£ أ—â„¢أ—â€¢أ—ع¾أ—آ¨ أ—â€¢أ—ع¾أ—â€کأ—آ أ—â€‌ أ—آ¨أ—آ©أ—ع¾ أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢أ—â„¢أ—â€Œ أ—طŒأ—â€کأ—â„¢أ—â€کأ—ع‘, أ—â€؛أ—ع‘ أ—ع¾أ—â€¢أ—â€؛أ—إ“/أ—â„¢ أ—إ“أ—آ¤أ—ع¾أ—â€¢أ—â€” "
+                    "أ—آ¢أ—â€¢أ—â€œ أ—آ©أ—â€؛أ—â€کأ—â€¢أ—ع¾ أ—â€کأ—ع¯أ—آ§أ—â€¢-أ—طŒأ—â„¢أ—طŒأ—ع©أ—â€Œ أ—آ©أ—إ“ SLH."
                 )
             else:
                 lines = []
-                lines.append("Referral Program â€“ SLH Global Investments")
+                lines.append("Referral Program أ¢â‚¬â€œ SLH Global Investments")
                 lines.append("")
                 lines.append(
                     "Your personal invite link (share with friends, family, clients):"
@@ -1163,7 +1163,7 @@ class InvestorWalletBot:
                 lines.append("")
                 lines.append(
                     f"Each new investor via your link currently grants "
-                    f"{reward_per:.8f} SLHA (â‰ˆ 1 ILS nominal value), "
+                    f"{reward_per:.8f} SLHA (أ¢â€°ث† 1 ILS nominal value), "
                     "credited both to you and to the new investor."
                 )
                 lines.append("")
@@ -1185,8 +1185,8 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×“×•×—×•×ھ ×‍×©×§×™×¢×™×‌ â€“ placeholder.
-        ×‘×”×‍×©×ڑ: PDF/HTML, ×،×™×›×•×‍×™ ×—×•×“×©, ×ھ×©×•×گ×•×ھ ×•×›×•'.
+        أ—â€œأ—â€¢أ—â€”أ—â€¢أ—ع¾ أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢أ—â„¢أ—â€Œ أ¢â‚¬â€œ placeholder.
+        أ—â€کأ—â€‌أ—â€چأ—آ©أ—ع‘: PDF/HTML, أ—طŒأ—â„¢أ—â€؛أ—â€¢أ—â€چأ—â„¢ أ—â€”أ—â€¢أ—â€œأ—آ©, أ—ع¾أ—آ©أ—â€¢أ—ع¯أ—â€¢أ—ع¾ أ—â€¢أ—â€؛أ—â€¢'.
         """
         tg_user = update.effective_user
         _ = self._ensure_user(update)
@@ -1197,8 +1197,8 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×¤×•×¨×ک×¤×•×œ×™×• ×‍×ھ×§×“×‌ â€“ placeholder.
-        ×‘×”×‍×©×ڑ: ×’×¨×¤×™×‌, ×¤×™×œ×•×—, × ×™×ھ×•×— ×،×™×›×•× ×™×‌.
+        أ—آ¤أ—â€¢أ—آ¨أ—ع©أ—آ¤أ—â€¢أ—إ“أ—â„¢أ—â€¢ أ—â€چأ—ع¾أ—آ§أ—â€œأ—â€Œ أ¢â‚¬â€œ placeholder.
+        أ—â€کأ—â€‌أ—â€چأ—آ©أ—ع‘: أ—â€™أ—آ¨أ—آ¤أ—â„¢أ—â€Œ, أ—آ¤أ—â„¢أ—إ“أ—â€¢أ—â€”, أ—آ أ—â„¢أ—ع¾أ—â€¢أ—â€” أ—طŒأ—â„¢أ—â€؛أ—â€¢أ—آ أ—â„¢أ—â€Œ.
         """
         tg_user = update.effective_user
         _ = self._ensure_user(update)
@@ -1280,8 +1280,8 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×‍×¦×™×’ ×¢×“ 10 ×”×ک×¨× ×–×§×¦×™×•×ھ ×”×گ×—×¨×•× ×•×ھ ×©×‘×”×ں ×”×‍×©×ھ×‍×© ×‍×¢×•×¨×‘ (Off-Chain).
-        ×¢×•×‘×“ ×‍×•×œ Transaction.from_user / Transaction.to_user (×‍×–×”×™ ×ک×œ×’×¨×‌).
+        أ—â€چأ—آ¦أ—â„¢أ—â€™ أ—آ¢أ—â€œ 10 أ—â€‌أ—ع©أ—آ¨أ—آ أ—â€“أ—آ§أ—آ¦أ—â„¢أ—â€¢أ—ع¾ أ—â€‌أ—ع¯أ—â€”أ—آ¨أ—â€¢أ—آ أ—â€¢أ—ع¾ أ—آ©أ—â€کأ—â€‌أ—ع؛ أ—â€‌أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—â€چأ—آ¢أ—â€¢أ—آ¨أ—â€ک (Off-Chain).
+        أ—آ¢أ—â€¢أ—â€کأ—â€œ أ—â€چأ—â€¢أ—إ“ Transaction.from_user / Transaction.to_user (أ—â€چأ—â€“أ—â€‌أ—â„¢ أ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ).
         """
         db = self._db()
         try:
@@ -1342,7 +1342,7 @@ class InvestorWalletBot:
                     direction = "OTHER"
 
                 lines.append(
-                    f"[{ts}] {direction} â€“ {amount:.4f} SLH (type={tx_type}, id={tx.id})"
+                    f"[{ts}] {direction} أ¢â‚¬â€œ {amount:.4f} SLH (type={tx_type}, id={tx.id})"
                 )
 
             await update.message.reply_text("\n".join(lines))
@@ -1366,7 +1366,7 @@ class InvestorWalletBot:
     async def cmd_send_slh(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×§×™×¦×•×¨ ×“×¨×ڑ: /send_slh <amount> <@username|user_id>"""
+        """أ—آ§أ—â„¢أ—آ¦أ—â€¢أ—آ¨ أ—â€œأ—آ¨أ—ع‘: /send_slh <amount> <@username|user_id>"""
         self._ensure_user(update)
 
         parts = (update.message.text or "").split()
@@ -1445,7 +1445,7 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×گ×“×‍×™×ں ×‘×œ×‘×“: ×ک×¢×™× ×ھ SLH ×œ×‍×©×ھ×‍×© ×œ×¤×™ ID.
+        أ—ع¯أ—â€œأ—â€چأ—â„¢أ—ع؛ أ—â€کأ—إ“أ—â€کأ—â€œ: أ—ع©أ—آ¢أ—â„¢أ—آ أ—ع¾ SLH أ—إ“أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—إ“أ—آ¤أ—â„¢ ID.
         /admin_credit <telegram_id> <amount>
         """
         if not self._is_admin(update.effective_user.id):
@@ -1494,20 +1494,20 @@ class InvestorWalletBot:
     async def cmd_admin_menu(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×ھ×¤×¨×™×ک ×گ×“×‍×™×ں â€“ ×–×‍×™×ں ×¨×§ ×œ×‍×–×”×” ×”×‍×•×’×“×¨ ×‘-ADMIN_USER_ID."""
+        """أ—ع¾أ—آ¤أ—آ¨أ—â„¢أ—ع© أ—ع¯أ—â€œأ—â€چأ—â„¢أ—ع؛ أ¢â‚¬â€œ أ—â€“أ—â€چأ—â„¢أ—ع؛ أ—آ¨أ—آ§ أ—إ“أ—â€چأ—â€“أ—â€‌أ—â€‌ أ—â€‌أ—â€چأ—â€¢أ—â€™أ—â€œأ—آ¨ أ—â€ک-ADMIN_USER_ID."""
         if not self._is_admin(update.effective_user.id):
             await update.message.reply_text("This command is admin-only.")
             return
 
         await update.message.reply_text(
-            "SLH Admin Menu â€“ tools for managing investor balances:",
+            "SLH Admin Menu أ¢â‚¬â€œ tools for managing investor balances:",
             reply_markup=self._admin_menu_keyboard(),
         )
 
     async def cmd_admin_list_users(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×گ×“×‍×™×ں: ×¨×©×™×‍×ھ ×”×‍×©×ھ×‍×©×™×‌ ×‘×‍×¢×¨×›×ھ + ×™×ھ×¨×•×ھ."""
+        """أ—ع¯أ—â€œأ—â€چأ—â„¢أ—ع؛: أ—آ¨أ—آ©أ—â„¢أ—â€چأ—ع¾ أ—â€‌أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ©أ—â„¢أ—â€Œ أ—â€کأ—â€چأ—آ¢أ—آ¨أ—â€؛أ—ع¾ + أ—â„¢أ—ع¾أ—آ¨أ—â€¢أ—ع¾."""
         if not self._is_admin(update.effective_user.id):
             await update.message.reply_text("This command is admin-only.")
             return
@@ -1528,7 +1528,7 @@ class InvestorWalletBot:
                 return
 
             lines: list[str] = []
-            lines.append("Admin â€“ Users (top 50 by SLH balance):")
+            lines.append("Admin أ¢â‚¬â€œ Users (top 50 by SLH balance):")
             lines.append("")
 
             for u in users:
@@ -1537,7 +1537,7 @@ class InvestorWalletBot:
                 lines.append(
                     f"- ID {u.telegram_id} | @{u.username or 'N/A'} | "
                     f"{bal:.4f} SLH | tier={tier} | "
-                    f"BNB={u.bnb_address or 'â€”'}"
+                    f"BNB={u.bnb_address or 'أ¢â‚¬â€‌'}"
                 )
 
             await update.message.reply_text("\n".join(lines))
@@ -1547,7 +1547,7 @@ class InvestorWalletBot:
     async def cmd_admin_ledger(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×گ×“×‍×™×ں: ×ھ×¦×•×’×” ×’×œ×•×‘×œ×™×ھ ×©×œ ×”-Ledger (×¢×“ 50 ×”×ک×¨× ×–×§×¦×™×•×ھ ×”×گ×—×¨×•× ×•×ھ)."""
+        """أ—ع¯أ—â€œأ—â€چأ—â„¢أ—ع؛: أ—ع¾أ—آ¦أ—â€¢أ—â€™أ—â€‌ أ—â€™أ—إ“أ—â€¢أ—â€کأ—إ“أ—â„¢أ—ع¾ أ—آ©أ—إ“ أ—â€‌-Ledger (أ—آ¢أ—â€œ 50 أ—â€‌أ—ع©أ—آ¨أ—آ أ—â€“أ—آ§أ—آ¦أ—â„¢أ—â€¢أ—ع¾ أ—â€‌أ—ع¯أ—â€”أ—آ¨أ—â€¢أ—آ أ—â€¢أ—ع¾)."""
         if not self._is_admin(update.effective_user.id):
             await update.message.reply_text("This command is admin-only.")
             return
@@ -1568,7 +1568,7 @@ class InvestorWalletBot:
                 return
 
             lines: list[str] = []
-            lines.append("Admin â€“ Global Ledger (last 50 transactions):")
+            lines.append("Admin أ¢â‚¬â€œ Global Ledger (last 50 transactions):")
             lines.append("")
 
             for tx in txs:
@@ -1587,7 +1587,7 @@ class InvestorWalletBot:
                     ts = "N/A"
 
                 lines.append(
-                    f"[{ts}] {tx_type} â€“ {amount:.4f} SLH | "
+                    f"[{ts}] {tx_type} أ¢â‚¬â€œ {amount:.4f} SLH | "
                     f"from={from_id or '-'} -> to={to_id or '-'} | id={tx.id}"
                 )
 
@@ -1600,13 +1600,13 @@ class InvestorWalletBot:
     async def cmd_ping(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×‘×“×™×§×ھ ×—×™×™×‌ ×‍×”×™×¨×” ×‘×§×œ×™×™× ×ک."""
+        """أ—â€کأ—â€œأ—â„¢أ—آ§أ—ع¾ أ—â€”أ—â„¢أ—â„¢أ—â€Œ أ—â€چأ—â€‌أ—â„¢أ—آ¨أ—â€‌ أ—â€کأ—آ§أ—إ“أ—â„¢أ—â„¢أ—آ أ—ع©."""
         await update.message.reply_text("pong")
 
     async def cmd_admin_selftest(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×گ×“×‍×™×ں ×‘×œ×‘×“: ×‍×¨×™×¥ self-test ×¢×‍×•×§ ×•×‍×¦×™×’ ×“×•\"×— ×‍×¦×‘."""
+        """أ—ع¯أ—â€œأ—â€چأ—â„¢أ—ع؛ أ—â€کأ—إ“أ—â€کأ—â€œ: أ—â€چأ—آ¨أ—â„¢أ—آ¥ self-test أ—آ¢أ—â€چأ—â€¢أ—آ§ أ—â€¢أ—â€چأ—آ¦أ—â„¢أ—â€™ أ—â€œأ—â€¢\"أ—â€” أ—â€چأ—آ¦أ—â€ک."""
         if not self._is_admin(update.effective_user.id):
             await update.message.reply_text("This command is admin-only.")
             return
@@ -1624,13 +1624,13 @@ class InvestorWalletBot:
             skipped = check.get("skipped", False)
 
             if ok and not skipped:
-                lines.append(f"âœ… {name}")
+                lines.append(f"أ¢إ“â€¦ {name}")
             elif skipped:
                 reason = check.get("reason", "")
-                lines.append(f"âڑھ {name} â€“ skipped ({reason})")
+                lines.append(f"أ¢ع‘ع¾ {name} أ¢â‚¬â€œ skipped ({reason})")
             else:
                 err = check.get("error", "unknown error")
-                lines.append(f"â‌Œ {name} â€“ {err}")
+                lines.append(f"أ¢â€Œإ’ {name} أ¢â‚¬â€œ {err}")
 
         await update.message.reply_text("\n".join(lines))
 
@@ -1638,9 +1638,9 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        ×‍×¦×™×’ ×œ×‍×©×ھ×‍×© ×ھ×¤×¨×™×ک ×‘×—×™×¨×ھ ×©×¤×”.
-        ×‘×©×œ×‘ ×”×–×” ×گ× ×—× ×• ×©×•×‍×¨×™×‌ ×گ×ھ ×”×”×¢×“×¤×” ×‘×–×™×›×¨×•×ں (context.user_data),
-        ×•×گ×—"×› × ×•×›×œ ×œ×”×¢×‘×™×¨ ×گ×ھ ×›×œ ×”×”×•×“×¢×•×ھ ×œ×”×©×ھ×‍×© ×‘-i18n.
+        أ—â€چأ—آ¦أ—â„¢أ—â€™ أ—إ“أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ© أ—ع¾أ—آ¤أ—آ¨أ—â„¢أ—ع© أ—â€کأ—â€”أ—â„¢أ—آ¨أ—ع¾ أ—آ©أ—آ¤أ—â€‌.
+        أ—â€کأ—آ©أ—إ“أ—â€ک أ—â€‌أ—â€“أ—â€‌ أ—ع¯أ—آ أ—â€”أ—آ أ—â€¢ أ—آ©أ—â€¢أ—â€چأ—آ¨أ—â„¢أ—â€Œ أ—ع¯أ—ع¾ أ—â€‌أ—â€‌أ—آ¢أ—â€œأ—آ¤أ—â€‌ أ—â€کأ—â€“أ—â„¢أ—â€؛أ—آ¨أ—â€¢أ—ع؛ (context.user_data),
+        أ—â€¢أ—ع¯أ—â€”"أ—â€؛ أ—آ أ—â€¢أ—â€؛أ—إ“ أ—إ“أ—â€‌أ—آ¢أ—â€کأ—â„¢أ—آ¨ أ—ع¯أ—ع¾ أ—â€؛أ—إ“ أ—â€‌أ—â€‌أ—â€¢أ—â€œأ—آ¢أ—â€¢أ—ع¾ أ—إ“أ—â€‌أ—آ©أ—ع¾أ—â€چأ—آ© أ—â€ک-i18n.
         """
         tg_user = update.effective_user
         lang = self._get_lang(tg_user, context)
@@ -1679,7 +1679,7 @@ class InvestorWalletBot:
     async def cb_main_menu(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×›×¤×ھ×•×¨×™ MENU_* ×¢×‘×•×¨ ×”×‍×©×§×™×¢."""
+        """أ—â€؛أ—آ¤أ—ع¾أ—â€¢أ—آ¨أ—â„¢ MENU_* أ—آ¢أ—â€کأ—â€¢أ—آ¨ أ—â€‌أ—â€چأ—آ©أ—آ§أ—â„¢أ—آ¢."""
         query = update.callback_query
         await query.answer()
         data = query.data
@@ -1705,12 +1705,12 @@ class InvestorWalletBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
-        Callback ×©×œ ×‘×—×™×¨×ھ ×©×¤×” â€“ LANG_en / LANG_he / LANG_ru / LANG_es / LANG_ar.
-        ×‍×¢×“×›×ں context.user_data["lang"] ×•×‍×¦×™×’ ×”×•×“×¢×ھ ×گ×™×©×•×¨.
+        Callback أ—آ©أ—إ“ أ—â€کأ—â€”أ—â„¢أ—آ¨أ—ع¾ أ—آ©أ—آ¤أ—â€‌ أ¢â‚¬â€œ LANG_en / LANG_he / LANG_ru / LANG_es / LANG_ar.
+        أ—â€چأ—آ¢أ—â€œأ—â€؛أ—ع؛ context.user_data["lang"] أ—â€¢أ—â€چأ—آ¦أ—â„¢أ—â€™ أ—â€‌أ—â€¢أ—â€œأ—آ¢أ—ع¾ أ—ع¯أ—â„¢أ—آ©أ—â€¢أ—آ¨.
         """
         query = update.callback_query
         await query.answer()
-        data = query.data  # ×œ×‍×©×œ "LANG_he"
+        data = query.data  # أ—إ“أ—â€چأ—آ©أ—إ“ "LANG_he"
 
         parts = data.split("_", 1)
         if len(parts) != 2:
@@ -1720,7 +1720,7 @@ class InvestorWalletBot:
         lang = i18n.normalize_lang(raw_lang)
         context.user_data["lang"] = lang
 
-        # ×”×•×“×¢×ھ ×گ×™×©×•×¨ ×‘×©×¤×” ×”× ×‘×—×¨×ھ
+        # أ—â€‌أ—â€¢أ—â€œأ—آ¢أ—ع¾ أ—ع¯أ—â„¢أ—آ©أ—â€¢أ—آ¨ أ—â€کأ—آ©أ—آ¤أ—â€‌ أ—â€‌أ—آ أ—â€کأ—â€”أ—آ¨أ—ع¾
         if lang == "he":
             confirm = i18n.t(lang, "LANGUAGE_SET_CONFIRM_HE")
         elif lang == "ru":
@@ -1735,7 +1735,7 @@ class InvestorWalletBot:
     async def cb_admin_menu(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
-        """×›×¤×ھ×•×¨×™ ADMIN_* ×¢×‘×•×¨ ×گ×“×‍×™×ں."""
+        """أ—â€؛أ—آ¤أ—ع¾أ—â€¢أ—آ¨أ—â„¢ ADMIN_* أ—آ¢أ—â€کأ—â€¢أ—آ¨ أ—ع¯أ—â€œأ—â€چأ—â„¢أ—ع؛."""
         query = update.callback_query
         await query.answer()
         data = query.data
@@ -1871,7 +1871,7 @@ class InvestorWalletBot:
                 )
                 return
 
-            # no special state â€“ ×”×•×“×¢×” ×—×•×¤×©×™×ھ
+            # no special state أ¢â‚¬â€œ أ—â€‌أ—â€¢أ—â€œأ—آ¢أ—â€‌ أ—â€”أ—â€¢أ—آ¤أ—آ©أ—â„¢أ—ع¾
             lang = self._get_lang(tg_user, context)
             fallback = i18n.t(lang, "GENERIC_UNKNOWN_COMMAND")
             await update.message.reply_text(fallback)
