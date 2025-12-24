@@ -17,7 +17,7 @@ jobs:
 
           bad = []
           binary_ext = re.compile(r"\.(png|jpg|jpeg|gif|ico|pdf|zip|woff2?)$", re.I)
-          conflict = re.compile(rb"<<<<<<<|=======|>>>>>>>")
+          conflict = re.compile(rb"^(<<<<<<<|=======|>>>>>>>)", re.M)
 
           for p in pathlib.Path(".").rglob("*"):
               if not p.is_file():
