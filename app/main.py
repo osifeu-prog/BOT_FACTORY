@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 import os
 BUILD_ID = os.getenv("BUILD_ID", "local-dev")
+=======
+﻿import os
+BUILD_ID = os.getenv("BUILD_ID", "local-dev")
+
+>>>>>>> 3b9fba0 (fix: remove BOM and ensure import os precedes BUILD_ID)
 
 # --- SLH SAFETY: ignore non-private updates at webhook (groups/channels) ---
 def _slh_is_private_update(payload: dict) -> bool:
