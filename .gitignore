@@ -5,3 +5,6 @@ __pycache__/
 BOT_FACTORY_SNAPSHOT.txt
 *_SNAPSHOT.txt
 
+
+.venv/
+

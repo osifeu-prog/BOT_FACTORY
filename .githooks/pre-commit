@@ -21,7 +21,7 @@ for f in paths:
     if not f or binary_ext.search(f):
         continue
     # Don't lint the hook itself
-    if f in (".githooks/pre-commit", ".git/hooks/pre-commit"):
+    if f in (".githooks/pre-commit", ".git/hooks/pre-commit", ".github/workflows/guardrails.yml"):
         continue
 
     data = read_from_index(f)
