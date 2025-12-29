@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from app.database import init_db
+from app.core.telegram_updates import ensure_telegram_updates_table, register_update_once
 from app.bot.investor_wallet_bot import initialize_bot, process_webhook
 from app.monitoring import run_selftest
 
@@ -66,6 +67,7 @@ def _slh_chat_fingerprint(payload: Dict[str, Any]) -> Tuple[str, str]:
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    ensure_telegram_updates_table()
     await initialize_bot()
 
 
@@ -134,5 +136,13 @@ async def telegram_webhook(request: Request):
             status_code=status.HTTP_200_OK,
         )
 
+    # ---- Dedup (idempotent): ignore duplicate update_id ----
+    try:
+        is_new = register_update_once(update_dict)
+        if not is_new:
+            return JSONResponse({"ok": True, "duplicate": True}, status_code=status.HTTP_200_OK)
+    except Exception as _e:
+        # Never break webhook on dedupe failure; just continue processing.
+        pass
     await process_webhook(update_dict)
     return JSONResponse({"ok": True}, status_code=status.HTTP_200_OK)
