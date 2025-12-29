@@ -1,7 +1,7 @@
-from app.bot.admin_ledger import admin_credit_ledger_cmd
-# app/bot/investor_wallet_bot.py
 from __future__ import annotations
 
+from app.bot.admin_ledger import admin_credit_ledger_cmd
+# app/bot/investor_wallet_bot.py
 import logging
 from typing import Any, Dict, Optional
 
@@ -40,8 +40,8 @@ _TG_APP: Optional[Application] = None
 
 async def _start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(
-        "×‘×¨×•×ڑ ×”×‘×گ ×œ-SLH Investor Gateway.\n\n"
-        "×¤×§×•×“×•×ھ:\n"
+        "أ—â€کأ—آ¨أ—â€¢أ—ع‘ أ—â€‌أ—â€کأ—ع¯ أ—إ“-SLH Investor Gateway.\n\n"
+        "أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾:\n"
         "/whoami\n"
         "/balance\n"
         "/history\n"
@@ -52,11 +52,11 @@ async def _start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(
-        "×¢×–×¨×”:\n"
-        "/whoami â€“ ×¤×¨×•×¤×™×œ ×ک×œ×’×¨×‌ ×‘×،×™×،×™\n"
-        "/balance â€“ ×™×ھ×¨×” ×‍×”-Ledger (Postgres)\n"
-        "/history â€“ ×”×™×،×ک×•×¨×™×” ×‍×”-Ledger (Postgres)\n"
-        "/admin_dedupe â€“ ×،×ک×ک×•×، ×”×ک×‘×œ×” telegram_updates (Admin)\n"
+        "أ—آ¢أ—â€“أ—آ¨أ—â€‌:\n"
+        "/whoami أ¢â‚¬â€œ أ—آ¤أ—آ¨أ—â€¢أ—آ¤أ—â„¢أ—إ“ أ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ أ—â€کأ—طŒأ—â„¢أ—طŒأ—â„¢\n"
+        "/balance أ¢â‚¬â€œ أ—â„¢أ—ع¾أ—آ¨أ—â€‌ أ—â€چأ—â€‌-Ledger (Postgres)\n"
+        "/history أ¢â‚¬â€œ أ—â€‌أ—â„¢أ—طŒأ—ع©أ—â€¢أ—آ¨أ—â„¢أ—â€‌ أ—â€چأ—â€‌-Ledger (Postgres)\n"
+        "/admin_dedupe أ¢â‚¬â€œ أ—طŒأ—ع©أ—ع©أ—â€¢أ—طŒ أ—â€‌أ—ع©أ—â€کأ—إ“أ—â€‌ telegram_updates (Admin)\n"
     )
 
 
@@ -74,7 +74,7 @@ async def _whoami_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def _require_cmd(fn, name: str):
     async def _missing(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text(
-            f"âڑ ï¸ڈ ×”×¤×§×•×“×” {name} ×¢×“×™×™×ں ×œ×گ ×–×‍×™× ×” (×‍×•×“×•×œ ×—×،×¨/×©×’×•×™)."
+            f"أ¢ع‘آ أ¯آ¸عˆ أ—â€‌أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€‌ {name} أ—آ¢أ—â€œأ—â„¢أ—â„¢أ—ع؛ أ—إ“أ—ع¯ أ—â€“أ—â€چأ—â„¢أ—آ أ—â€‌ (أ—â€چأ—â€¢أ—â€œأ—â€¢أ—إ“ أ—â€”أ—طŒأ—آ¨/أ—آ©أ—â€™أ—â€¢أ—â„¢)."
         )
 
     return fn if fn is not None else _missing

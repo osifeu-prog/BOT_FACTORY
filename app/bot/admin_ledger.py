@@ -44,18 +44,19 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     amount_s: Optional[str] = None
     memo: Optional[str] = None
 
-    # If first arg looks like a telegram_id and we have at least 2 args -> (tid, amount)
-    if len(args) >= 2 and args[0].lstrip("-").isdigit():
+    # If first arg looks like telegram_id and we have at least 2 args -> (tid, amount)
+    if len(args) >= 2 and args[0].isdigit():
         tid = int(args[0])
         amount_s = args[1]
         memo = " ".join(args[2:]).strip() or None
     else:
-        # (amount) -> credit the caller
+        # (amount) -> credit self
         tid = update.effective_user.id if update.effective_user else None
         amount_s = args[0]
         memo = " ".join(args[1:]).strip() or None
 
     if tid is None:
+        await update.effective_message.reply_text("Could not determine telegram_id.")
         return
 
     try:
@@ -76,7 +77,7 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     )
 
     await update.effective_message.reply_text(
-        f"✅ Ledger credited\n"
+        "✅ Ledger credited\n"
         f"telegram_id: {tid}\n"
         f"amount: {amt:.4f} SLH\n"
         f"tx_id: {tx_id}"
