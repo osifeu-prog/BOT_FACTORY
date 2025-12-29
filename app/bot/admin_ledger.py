@@ -22,6 +22,11 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     """
     /admin_credit_ledger <amount> [memo...]
     /admin_credit_ledger <telegram_id> <amount> [memo...]
+
+    Examples:
+      /admin_credit_ledger 1000 Seed
+      /admin_credit_ledger 224223270 1000 Seed
+      /admin_credit_ledger 1.00
     """
     if not _is_admin(update):
         await update.effective_message.reply_text("⛔ Admin only.")
@@ -33,7 +38,8 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
             "Usage:\n"
             "/admin_credit_ledger <amount> [memo]\n"
             "/admin_credit_ledger <telegram_id> <amount> [memo]\n"
-            "Example:\n/admin_credit_ledger 1000 Seed"
+            "Example:\n"
+            "/admin_credit_ledger 1000 Seed"
         )
         return
 
@@ -41,16 +47,19 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     amount_s: Optional[str] = None
     memo: Optional[str] = None
 
+    # Pattern: <telegram_id> <amount> [memo...]
     if len(args) >= 2 and args[0].isdigit():
         tid = int(args[0])
         amount_s = args[1]
         memo = " ".join(args[2:]).strip() or None
     else:
+        # Pattern: <amount> [memo...]
         tid = update.effective_user.id if update.effective_user else None
         amount_s = args[0]
         memo = " ".join(args[1:]).strip() or None
 
     if tid is None or amount_s is None:
+        await update.effective_message.reply_text("Internal error: missing telegram_id/amount.")
         return
 
     try:
@@ -62,8 +71,8 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
         return
 
     tx_id = credit(
-        telegram_id=int(tid),
-        amount=amt,
+        int(tid),
+        amt,
         kind="admin_credit",
         memo=memo,
         ref_update_id=(update.update_id if update else None),
