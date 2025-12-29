@@ -1,45 +1,25 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from __future__ import annotations
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
-# יצירת engine מול ה-Postgres מריילווי
-engine = create_engine(
-    settings.DATABASE_URL,
-    future=True,
-    pool_pre_ping=True,  # מונע בעיות חיבור מתות
-)
+engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, future=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
 
-# Session של SQLAlchemy לעבודה מול ה-DB
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-    future=True,
-)
-
-# בסיס המודלים
-Base = declarative_base()
-
-
-def init_db():
+def db_init() -> None:
+    ddl = """
+    CREATE TABLE IF NOT EXISTS telegram_updates (
+      id BIGSERIAL PRIMARY KEY,
+      update_id BIGINT NOT NULL UNIQUE,
+      received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      chat_id BIGINT NULL,
+      user_id BIGINT NULL,
+      kind TEXT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_telegram_updates_received_at ON telegram_updates (received_at);
     """
-    יצירת טבלאות חסרות (users, transactions וכו') לפי המודלים.
-    לא נוגע בטבלאות קיימות.
-    """
-    # חשוב לייבא את המודלים כדי ש-SQLAlchemy יכיר את הטבלאות
-    from app import models  # noqa: F401
-
-    Base.metadata.create_all(bind=engine)
-
-
-def get_db():
-    """
-    Dependency סטנדרטי למי שרוצה להשתמש ב-Session דרך FastAPI.
-    (כרגע לא חובה, אבל טוב שיהיה לעתיד.)
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    with engine.begin() as conn:
+        for stmt in [s.strip() for s in ddl.split(";") if s.strip()]:
+            conn.execute(text(stmt))
