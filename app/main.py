@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.database import init_db
 from app.core.telegram_updates import ensure_telegram_updates_table, register_update_once
+from app.core.ledger import ensure_ledger_tables
 from app.bot.investor_wallet_bot import initialize_bot, process_webhook
 from app.monitoring import run_selftest
 
@@ -68,6 +69,7 @@ def _slh_chat_fingerprint(payload: Dict[str, Any]) -> Tuple[str, str]:
 async def startup_event():
     init_db()
     ensure_telegram_updates_table()
+    ensure_ledger_tables()
     await initialize_bot()
 
 
