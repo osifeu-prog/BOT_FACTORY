@@ -1,3 +1,4 @@
+from app.bot.admin_ledger import admin_credit_ledger_cmd
 # app/bot/investor_wallet_bot.py
 from __future__ import annotations
 
@@ -39,8 +40,8 @@ _TG_APP: Optional[Application] = None
 
 async def _start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(
-        "ברוך הבא ל-SLH Investor Gateway.\n\n"
-        "פקודות:\n"
+        "×‘×¨×•×ڑ ×”×‘×گ ×œ-SLH Investor Gateway.\n\n"
+        "×¤×§×•×“×•×ھ:\n"
         "/whoami\n"
         "/balance\n"
         "/history\n"
@@ -51,11 +52,11 @@ async def _start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(
-        "עזרה:\n"
-        "/whoami – פרופיל טלגרם בסיסי\n"
-        "/balance – יתרה מה-Ledger (Postgres)\n"
-        "/history – היסטוריה מה-Ledger (Postgres)\n"
-        "/admin_dedupe – סטטוס הטבלה telegram_updates (Admin)\n"
+        "×¢×–×¨×”:\n"
+        "/whoami â€“ ×¤×¨×•×¤×™×œ ×ک×œ×’×¨×‌ ×‘×،×™×،×™\n"
+        "/balance â€“ ×™×ھ×¨×” ×‍×”-Ledger (Postgres)\n"
+        "/history â€“ ×”×™×،×ک×•×¨×™×” ×‍×”-Ledger (Postgres)\n"
+        "/admin_dedupe â€“ ×،×ک×ک×•×، ×”×ک×‘×œ×” telegram_updates (Admin)\n"
     )
 
 
@@ -73,7 +74,7 @@ async def _whoami_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def _require_cmd(fn, name: str):
     async def _missing(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text(
-            f"⚠️ הפקודה {name} עדיין לא זמינה (מודול חסר/שגוי)."
+            f"âڑ ï¸ڈ ×”×¤×§×•×“×” {name} ×¢×“×™×™×ں ×œ×گ ×–×‍×™× ×” (×‍×•×“×•×œ ×—×،×¨/×©×’×•×™)."
         )
 
     return fn if fn is not None else _missing
