@@ -36,7 +36,8 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
         await update.effective_message.reply_text(
             "Usage:\n"
             "/admin_credit_ledger <amount> [memo]\n"
-            "/admin_credit_ledger <telegram_id> <amount> [memo]"
+            "/admin_credit_ledger <telegram_id> <amount> [memo]\n\n"
+            "Example:\n/admin_credit_ledger 1000 Seed"
         )
         return
 
@@ -44,19 +45,16 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     amount_s: Optional[str] = None
     memo: Optional[str] = None
 
-    # If first arg looks like telegram_id and we have at least 2 args -> (tid, amount)
     if len(args) >= 2 and args[0].isdigit():
         tid = int(args[0])
         amount_s = args[1]
         memo = " ".join(args[2:]).strip() or None
     else:
-        # (amount) -> credit self
         tid = update.effective_user.id if update.effective_user else None
         amount_s = args[0]
         memo = " ".join(args[1:]).strip() or None
 
-    if tid is None:
-        await update.effective_message.reply_text("Could not determine telegram_id.")
+    if tid is None or amount_s is None:
         return
 
     try:
@@ -68,8 +66,8 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
         return
 
     tx_id = credit(
-        int(tid),
-        amt,
+        telegram_id=int(tid),
+        amount=amt,
         kind="admin_credit",
         memo=memo,
         ref_update_id=(update.update_id if update else None),
