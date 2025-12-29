@@ -15,10 +15,17 @@ def _is_admin(user_id: Optional[int]) -> bool:
     admin_raw = getattr(settings, "ADMIN_USER_ID", None) or os.getenv("ADMIN_USER_ID")
     if not admin_raw:
         return False
-    try:
-        return int(admin_raw) == int(user_id or 0)
-    except Exception:
-        return str(admin_raw).strip() == str(user_id or "").strip()
+    # allow "123" or "123,456"
+    raw = str(admin_raw).strip()
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    for p in parts:
+        try:
+            if int(p) == int(user_id or 0):
+                return True
+        except Exception:
+            if p == str(user_id or ""):
+                return True
+    return False
 
 
 def _connect():
@@ -30,10 +37,6 @@ def _connect():
 
 
 def get_dedupe_stats() -> Tuple[int, Optional[tuple]]:
-    """
-    Returns (count_rows, last_row)
-    last_row = (update_id, received_at, chat_id, user_id, kind)
-    """
     ensure_telegram_updates_table()
 
     conn = _connect()
@@ -65,23 +68,21 @@ async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("⛔ אין הרשאה. (ADMIN בלבד)")
         return
 
-    try:
-        count_rows, last_row = get_dedupe_stats()
-        lines = []
-        lines.append("🧩 Dedupe Status (telegram_updates)")
-        lines.append(f"• rows: {count_rows}")
+    count_rows, last_row = get_dedupe_stats()
 
-        if last_row:
-            update_id, received_at, chat_id, user_id, kind = last_row
-            lines.append("• last:")
-            lines.append(f"  - update_id: {update_id}")
-            lines.append(f"  - received_at: {received_at}")
-            lines.append(f"  - chat_id: {chat_id}")
-            lines.append(f"  - user_id: {user_id}")
-            lines.append(f"  - kind: {kind}")
-        else:
-            lines.append("• last: (empty)")
+    lines = []
+    lines.append("🧩 Dedupe Status (telegram_updates)")
+    lines.append(f"• rows: {count_rows}")
 
-        await update.effective_message.reply_text("\n".join(lines))
-    except Exception as e:
-        await update.effective_message.reply_text(f"❌ admin_dedupe failed: {type(e).__name__}: {e}")
+    if last_row:
+        update_id, received_at, chat_id, user_id, kind = last_row
+        lines.append("• last:")
+        lines.append(f"  - update_id: {update_id}")
+        lines.append(f"  - received_at: {received_at}")
+        lines.append(f"  - chat_id: {chat_id}")
+        lines.append(f"  - user_id: {user_id}")
+        lines.append(f"  - kind: {kind}")
+    else:
+        lines.append("• last: (empty)")
+
+    await update.effective_message.reply_text("\n".join(lines))
