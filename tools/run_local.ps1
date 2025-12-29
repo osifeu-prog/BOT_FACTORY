@@ -1,3 +1,48 @@
+﻿[CmdletBinding()]
+param(
+  [int]$Port = 8080,
+  [switch]$NoBot,
+  [switch]$Reload,
+  [switch]$PatchMain,
+  [switch]$Push
+)
+
+$ErrorActionPreference = "Stop"
+
+# repo root = parent of tools\
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
+
+Write-Host "==> Repo: $root" -ForegroundColor Cyan
+
+# Ensure venv exists
+if (!(Test-Path ".\.venv\Scripts\python.exe")) {
+  Write-Host "==> Creating venv (.venv)..." -ForegroundColor Cyan
+  python -m venv .venv
+}
+
+# Activate venv
+. .\.venv\Scripts\Activate.ps1
+
+Write-Host "==> Python:" -ForegroundColor Cyan
+python -V
+python -c "import sys; print(sys.executable)"
+
+Write-Host "==> Installing deps..." -ForegroundColor Cyan
+python -m pip install -U pip | Out-Host
+python -m pip install -U openai "python-telegram-bot>=22" fastapi uvicorn | Out-Host
+
+Write-Host "==> Versions:" -ForegroundColor Cyan
+python -m pip list | Select-String -Pattern "openai|python-telegram-bot|fastapi|uvicorn" | Out-Host
+
+# Patch main.py (optional)
+if ($PatchMain) {
+  $mainPath = Join-Path $root "app\main.py"
+  if (!(Test-Path $mainPath)) { throw "app\main.py not found: $mainPath" }
+
+  Write-Host "==> Patching app\main.py (safe startup)..." -ForegroundColor Yellow
+
+  $patched = @"
 import os
 import logging
 from datetime import datetime, timezone
@@ -172,3 +217,18 @@ async def telegram_webhook(request: Request):
 
     await process_webhook(update_dict)
     return JSONResponse({"ok": True}, status_code=status.HTTP_200_OK)
+"@
+  [System.IO.File]::WriteAllText($mainPath, $patched, (New-Object System.Text.UTF8Encoding($false)))
+  Write-Host "==> Patched $mainPath" -ForegroundColor Green
+}
+
+# Env for run
+$env:PORT = "$Port"
+if ($NoBot) { $env:DISABLE_TELEGRAM_BOT = "1" }
+
+Write-Host "==> Starting uvicorn..." -ForegroundColor Green
+$reloadArg = ""
+if ($Reload) { $reloadArg = "--reload" }
+
+python -m uvicorn app.main:app --host 127.0.0.1 --port $Port $reloadArg
+
