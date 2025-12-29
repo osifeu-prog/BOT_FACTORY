@@ -46,7 +46,6 @@ async def ai_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     client = OpenAI(api_key=api_key)
-
     resp = client.chat.completions.create(
         model=model,
         messages=[
