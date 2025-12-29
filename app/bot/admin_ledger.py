@@ -22,10 +22,6 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     """
     /admin_credit_ledger <amount> [memo...]
     /admin_credit_ledger <telegram_id> <amount> [memo...]
-
-    Examples:
-      /admin_credit_ledger 1000 Seed
-      /admin_credit_ledger 224223270 1000 Seed
     """
     if not _is_admin(update):
         await update.effective_message.reply_text("⛔ Admin only.")
@@ -36,7 +32,7 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
         await update.effective_message.reply_text(
             "Usage:\n"
             "/admin_credit_ledger <amount> [memo]\n"
-            "/admin_credit_ledger <telegram_id> <amount> [memo]\n\n"
+            "/admin_credit_ledger <telegram_id> <amount> [memo]\n"
             "Example:\n/admin_credit_ledger 1000 Seed"
         )
         return
