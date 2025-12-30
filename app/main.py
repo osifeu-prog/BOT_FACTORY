@@ -1,4 +1,4 @@
-import os
+﻿import os
 import logging
 logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
@@ -158,6 +158,6 @@ async def telegram_webhook(request: Request):
         await process_webhook(update_dict)
     except Exception:
         logger.exception("telegram webhook processing failed")
-        # חשוב: מחזירים 200 כדי שטלגרם לא יעשה retry אינסופי
+        # ×—×©×•×‘: ×‍×—×–×™×¨×™×‌ 200 ×›×“×™ ×©×ک×œ×’×¨×‌ ×œ×گ ×™×¢×©×” retry ×گ×™× ×،×•×¤×™
         return {"ok": True}
     return {"ok": True}
