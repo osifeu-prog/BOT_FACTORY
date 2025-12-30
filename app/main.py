@@ -1,5 +1,6 @@
 import os
 import logging
+logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
 from typing import Any, Dict, Tuple
 
@@ -153,27 +154,10 @@ async def selftest():
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
     update_dict = await request.json()
-
-    if not _slh_is_private_update(update_dict):
-        chat_type, chat_id = _slh_chat_fingerprint(update_dict)
-        update_id = str(update_dict.get("update_id") or "?")
-        try:
-            log.info(
-                f"SLH SAFETY: ignored non-private update_id={update_id} chat_type={chat_type} chat_id={chat_id}"
-            )
-        except Exception:
-            pass
-        return JSONResponse(
-            {"ok": True, "ignored": "non-private", "chat_type": chat_type, "chat_id": chat_id},
-            status_code=status.HTTP_200_OK,
-        )
-
     try:
-        is_new = register_update_once(update_dict)
-        if not is_new:
-            return JSONResponse({"ok": True, "duplicate": True}, status_code=status.HTTP_200_OK)
+        await process_webhook(update_dict)
     except Exception:
-        pass
-
-    await process_webhook(update_dict)
-    return JSONResponse({"ok": True}, status_code=status.HTTP_200_OK)
+        logger.exception("telegram webhook processing failed")
+        # חשוב: מחזירים 200 כדי שטלגרם לא יעשה retry אינסופי
+        return {"ok": True}
+    return {"ok": True}

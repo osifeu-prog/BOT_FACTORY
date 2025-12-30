@@ -27,7 +27,7 @@ def _check_database(checks: Dict[str, Any]) -> str:
 
 
 def _check_env(checks: Dict[str, Any]) -> str:
-    # ×—×©×•×‘: /ready ×œ×گ ×گ×‍×•×¨ ×œ×”×™×›×©×œ ×›×©×‍×¨×™×¦×™×‌ API-only (DISABLE_TELEGRAM_BOT=1)
+    # �-ש�.�': /ready �o�? �?�?�.ר �o�"�T�>ש�o �>ש�?ר�Tצ�T�? API-only (DISABLE_TELEGRAM_BOT=1)
     missing: List[str] = []
 
     disable_bot = _is_truthy(os.getenv("DISABLE_TELEGRAM_BOT") or "")
@@ -35,11 +35,11 @@ def _check_env(checks: Dict[str, Any]) -> str:
 
     required: List[str] = []
 
-    # BOT_TOKEN × ×“×¨×© ×¨×§ ×گ×‌ ×”×‘×•×ک ×‍×•×¤×¢×œ
+    # BOT_TOKEN נ�"רש רק �?�? �"�'�.�? �?�.פע�o
     if not disable_bot:
         required.append("BOT_TOKEN")
 
-    # ×‍×©×ھ× ×™ BSC × ×“×¨×©×™×‌ ×¨×§ ×گ×‌ ×‘×™×§×©×ھ ×‘×›×œ×œ ×œ×‘×¦×¢ ×‘×“×™×§×•×ھ ×گ×•×ں-×¦'×™×™×ں
+    # �?ש�?נ�T BSC נ�"רש�T�? רק �?�? �'�Tקש�? �'�>�o�o �o�'צע �'�"�Tק�.�? �?�.�?-צ'�T�T�?
     if bsc_rpc:
         required.extend(["COMMUNITY_WALLET_ADDRESS", "SLH_TOKEN_ADDRESS"])
 
@@ -62,7 +62,7 @@ def _check_telegram(checks: Dict[str, Any], quick: bool) -> str:
         checks["telegram"] = {"ok": False, "error": "BOT_TOKEN not configured"}
         return "degraded"
 
-    # ×گ×‌ ×ھ×¨×¦×” later: ×‘×“×™×§×ھ getMe ×گ×‍×™×ھ×™×ھ. ×›×¨×’×¢ × ×©×‍×•×¨ ×™×¦×™×‘/×‍×”×™×¨.
+    # �?�? �?רצ�" later: �'�"�Tק�? getMe �?�?�T�?�T�?. �>ר�'ע נש�?�.ר �Tצ�T�'/�?�"�Tר.
     checks["telegram"] = {"ok": True}
     return "ok"
 
