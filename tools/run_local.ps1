@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
   [int]$Port = 8080,
   [switch]$NoBot,
@@ -224,6 +224,12 @@ async def telegram_webhook(request: Request):
 
 # Env for run
 $env:PORT = "$Port"
+
+# If DATABASE_URL is missing locally, default to sqlite (so server won't crash)
+if ([string]::IsNullOrWhiteSpace($env:DATABASE_URL)) {
+  $env:DATABASE_URL = "sqlite+pysqlite:///./local.db"
+  Write-Host "==> DATABASE_URL missing -> using sqlite local.db" -ForegroundColor Yellow
+}
 if ($NoBot) { $env:DISABLE_TELEGRAM_BOT = "1" }
 
 Write-Host "==> Starting uvicorn..." -ForegroundColor Green

@@ -81,8 +81,9 @@ def _bot_token_looks_valid(token: str) -> bool:
 async def startup_event():
     init_db()
     ensure_telegram_updates_table()
-    ensure_ledger_tables()
-
+    dsn = (os.getenv("DATABASE_URL") or "").strip().lower()
+    if dsn.startswith("postgres://") or dsn.startswith("postgresql://") or dsn.startswith("postgres"):
+        ensure_ledger_tables()
     if _truthy(os.getenv("DISABLE_TELEGRAM_BOT")):
         log.warning("Telegram bot disabled via DISABLE_TELEGRAM_BOT=1 -> starting API only")
         return

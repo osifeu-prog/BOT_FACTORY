@@ -11,3 +11,13 @@ BOT_FACTORY_SNAPSHOT.txt
 
 .env
 
+
+# local encrypted secrets
+tools/.vault/
+
+
+# local secrets input + vault
+tools/.vault/
+tools/railway.vars.txt
+local.db
+

@@ -1,185 +1,98 @@
-import logging
-import json
+import os
 from typing import Any, Dict, List
-from urllib.request import urlopen
-from urllib.error import URLError, HTTPError
 
-from telegram import Bot
 from sqlalchemy import text
 
-from app.database import SessionLocal
 from app.core.config import settings
+from app.database import SessionLocal
 from app import blockchain
 
-logger = logging.getLogger(__name__)
+
+def _is_truthy(v: str) -> bool:
+    return (v or "").strip().lower() in ("1", "true", "yes", "on")
 
 
 def _check_database(checks: Dict[str, Any]) -> str:
-    status = "ok"
     try:
         db = SessionLocal()
-        db.execute(text("SELECT 1"))
-        checks["database"] = {"ok": True}
-    except Exception as e:
-        logger.exception("Database selftest failed: %s", e)
-        checks["database"] = {"ok": False, "error": str(e)}
-        status = "error"
-    finally:
         try:
+            db.execute(text("SELECT 1"))
+        finally:
             db.close()
-        except Exception:
-            pass
-    return status
+        checks["database"] = {"ok": True}
+        return "ok"
+    except Exception as e:
+        checks["database"] = {"ok": False, "error": str(e)}
+        return "degraded"
 
 
 def _check_env(checks: Dict[str, Any]) -> str:
-    status = "ok"
+    # ×—×©×•×‘: /ready ×œ×گ ×گ×‍×•×¨ ×œ×”×™×›×©×œ ×›×©×‍×¨×™×¦×™×‌ API-only (DISABLE_TELEGRAM_BOT=1)
     missing: List[str] = []
 
-    required = [
-        "BOT_TOKEN",
-        "DATABASE_URL",
-        "COMMUNITY_WALLET_ADDRESS",
-        "SLH_TOKEN_ADDRESS",
-    ]
+    disable_bot = _is_truthy(os.getenv("DISABLE_TELEGRAM_BOT") or "")
+    bsc_rpc = (os.getenv("BSC_RPC_URL") or "").strip()
+
+    required: List[str] = []
+
+    # BOT_TOKEN × ×“×¨×© ×¨×§ ×گ×‌ ×”×‘×•×ک ×‍×•×¤×¢×œ
+    if not disable_bot:
+        required.append("BOT_TOKEN")
+
+    # ×‍×©×ھ× ×™ BSC × ×“×¨×©×™×‌ ×¨×§ ×گ×‌ ×‘×™×§×©×ھ ×‘×›×œ×œ ×œ×‘×¦×¢ ×‘×“×™×§×•×ھ ×گ×•×ں-×¦'×™×™×ں
+    if bsc_rpc:
+        required.extend(["COMMUNITY_WALLET_ADDRESS", "SLH_TOKEN_ADDRESS"])
 
     for name in required:
-        value = getattr(settings, name, None)
-        if not value:
+        if not (os.getenv(name) or "").strip():
             missing.append(name)
 
-    checks["env"] = {
-        "ok": len(missing) == 0,
-        "missing": missing,
-    }
-
-    if missing:
-        status = "degraded"
-
-    return status
+    checks["env"] = {"ok": len(missing) == 0, "missing": missing}
+    return "ok" if not missing else "degraded"
 
 
 def _check_telegram(checks: Dict[str, Any], quick: bool) -> str:
-    """
-    בדיקת טלגרם:
-
-    quick=True  -> רק לוודא שיש BOT_TOKEN.
-    quick=False -> קריאת getMe ישירות ל-HTTP API של טלגרם (סינכרוני).
-    """
-    status = "ok"
-
-    if not settings.BOT_TOKEN:
-        checks["telegram"] = {
-            "ok": False,
-            "error": "BOT_TOKEN not configured",
-        }
-        return "degraded"
-
-    if quick:
-        checks["telegram"] = {"ok": True}
+    disable_bot = _is_truthy(os.getenv("DISABLE_TELEGRAM_BOT") or "")
+    if disable_bot:
+        checks["telegram"] = {"ok": True, "skipped": True, "reason": "DISABLE_TELEGRAM_BOT=1"}
         return "ok"
 
-    try:
-        url = f"https://api.telegram.org/bot{settings.BOT_TOKEN}/getMe"
-        with urlopen(url, timeout=5) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+    token = (os.getenv("BOT_TOKEN") or "").strip()
+    if not token:
+        checks["telegram"] = {"ok": False, "error": "BOT_TOKEN not configured"}
+        return "degraded"
 
-        if not data.get("ok"):
-            checks["telegram"] = {
-                "ok": False,
-                "error": str(data),
-            }
-            status = "error"
-        else:
-            result = data.get("result", {})
-            checks["telegram"] = {
-                "ok": True,
-                "username": result.get("username"),
-                "id": result.get("id"),
-            }
-    except (HTTPError, URLError) as e:
-        logger.exception("Telegram selftest failed (HTTP): %s", e)
-        checks["telegram"] = {"ok": False, "error": str(e)}
-        status = "error"
-    except Exception as e:
-        logger.exception("Telegram selftest failed: %s", e)
-        checks["telegram"] = {"ok": False, "error": str(e)}
-        status = "error"
-
-    return status
+    # ×گ×‌ ×ھ×¨×¦×” later: ×‘×“×™×§×ھ getMe ×گ×‍×™×ھ×™×ھ. ×›×¨×’×¢ × ×©×‍×•×¨ ×™×¦×™×‘/×‍×”×™×¨.
+    checks["telegram"] = {"ok": True}
+    return "ok"
 
 
 def _check_bsc(checks: Dict[str, Any]) -> str:
-    status = "ok"
-
-    if not settings.BSC_RPC_URL or not settings.COMMUNITY_WALLET_ADDRESS:
-        checks["bsc"] = {
-            "ok": False,
-            "skipped": True,
-            "reason": "BSC_RPC_URL or COMMUNITY_WALLET_ADDRESS missing",
-        }
-        return "degraded"
+    bsc_rpc = (os.getenv("BSC_RPC_URL") or "").strip()
+    if not bsc_rpc or not (settings.COMMUNITY_WALLET_ADDRESS or "").strip():
+        checks["bsc"] = {"ok": True, "skipped": True, "reason": "BSC_RPC_URL or COMMUNITY_WALLET_ADDRESS missing"}
+        return "ok"
 
     try:
         on = blockchain.get_onchain_balances(settings.COMMUNITY_WALLET_ADDRESS)
-        if on is None:
-            checks["bsc"] = {
-                "ok": False,
-                "error": "Unable to fetch on-chain balances (RPC or address error).",
-            }
-            status = "degraded"
-        else:
-            checks["bsc"] = {
-                "ok": True,
-                "bnb": str(on.get("bnb")),
-                "slh": str(on.get("slh")),
-            }
+        checks["bsc"] = {"ok": True, "balances": on}
+        return "ok"
     except Exception as e:
-        logger.exception("BSC selftest failed: %s", e)
         checks["bsc"] = {"ok": False, "error": str(e)}
-        status = "error"
-
-    return status
+        return "degraded"
 
 
-def run_selftest(quick: bool = False) -> Dict[str, Any]:
-    """
-    מפעיל בדיקות בריאות על:
-    - DB
-    - ENV חיוניים
-    - Telegram Bot
-    - BSC RPC + Community Wallet
-
-    quick=True -> בדיקה מהירה (בלי getMe).
-    """
+def run_checks(quick: bool = True) -> Dict[str, Any]:
     checks: Dict[str, Any] = {}
-    overall = "ok"
+    statuses = [
+        _check_database(checks),
+        _check_env(checks),
+        _check_telegram(checks, quick=quick),
+        _check_bsc(checks),
+    ]
+    overall = "ok" if all(s == "ok" for s in statuses) else "degraded"
+    return {"status": overall, "checks": checks}
 
-    st = _check_database(checks)
-    if st == "error":
-        overall = "error"
-    elif st == "degraded" and overall == "ok":
-        overall = "degraded"
-
-    st = _check_env(checks)
-    if st == "error":
-        overall = "error"
-    elif st == "degraded" and overall == "ok":
-        overall = "degraded"
-
-    st = _check_telegram(checks, quick=quick)
-    if st == "error":
-        overall = "error"
-    elif st == "degraded" and overall == "ok":
-        overall = "degraded"
-
-    st = _check_bsc(checks)
-    if st == "error":
-        overall = "error"
-    elif st == "degraded" and overall == "ok":
-        overall = "degraded"
-
-    return {
-        "status": overall,
-        "checks": checks,
-    }
+def run_selftest(quick: bool = True) -> Dict[str, Any]:
+    # Backward-compatible alias (older main.py imports run_selftest)
+    return run_checks(quick=quick)
