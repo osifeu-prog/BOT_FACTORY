@@ -14,9 +14,13 @@ from app.monitoring import run_selftest
 
 BUILD_ID = os.getenv("BUILD_ID", "local-dev")
 log = logging.getLogger("slhnet")
+from app.routers.investments import router as invest_router
+
 app = FastAPI(title="SLH Investor Gateway")
 
 
+
+app.include_router(invest_router)
 def _slh_is_private_update(payload: Dict[str, Any]) -> bool:
     try:
         msg = (
