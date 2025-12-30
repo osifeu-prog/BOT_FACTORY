@@ -72,7 +72,19 @@ def ensure_handlers() -> None:
 
 
 async def process_webhook(update_dict: Dict[str, Any]) -> None:
-    """
+    # --- simple in-memory dedupe (10 min) ---
+    import time as _time
+    _seen = globals().setdefault("_seen_updates", {})  # {update_id: ts}
+    _now = _time.time()
+    for _k, _ts in list(_seen.items()):
+        if _now - _ts > 600:
+            _seen.pop(_k, None)
+    _uid = update_dict.get("update_id")
+    if _uid is not None:
+        if _uid in _seen:
+            return
+        _seen[_uid] = _now
+"""
     Called by FastAPI webhook endpoint.
     Must not raise (main.py catches anyway), and must not reference undefined vars.
     """
