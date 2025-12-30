@@ -2,20 +2,16 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# בסיס המודלים (חשוב שיהיה כאן כי מודלים מייבאים אותו)
+# Base MUST exist here because models import it: rom app.database import Base
 Base = declarative_base()
 
 
 def _normalize_db_url(url: str) -> str:
     u = (url or "").strip()
 
-    # remove wrapping quotes (common when pasted)
+    # remove wrapping quotes
     if len(u) >= 2 and (u[0] == u[-1]) and (u[0] in ("'", '"')):
         u = u[1:-1].strip()
-
-    # ignore CI/template placeholders like: ${{Postgres.DATABASE_URL}}
-    if "${{" in u or "}}" in u:
-        return ""
 
     # Railway/Heroku style scheme
     if u.startswith("postgres://"):
@@ -24,10 +20,8 @@ def _normalize_db_url(url: str) -> str:
     return u
 
 
-# DB URL from environment (Railway), optional in local dev.
+# DATABASE_URL required in production, optional in local dev
 DATABASE_URL = _normalize_db_url(os.getenv("DATABASE_URL") or "")
-
-# Local fallback
 if not DATABASE_URL:
     DATABASE_URL = "sqlite+pysqlite:///./local.db"
 
@@ -42,17 +36,12 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db() -> None:
-    """
-    יצירת טבלאות חסרות לפי המודלים.
-    """
+    # Import models so they register on Base.metadata
     from app import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
 
 
 def get_db():
-    """
-    Dependency סטנדרטי לשימוש ב-Session דרך FastAPI.
-    """
     db = SessionLocal()
     try:
         yield db

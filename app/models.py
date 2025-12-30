@@ -13,11 +13,11 @@ from app.database import Base
 
 class User(Base):
     """
-    טבלת משתמשים – מותאם לסכימה הקיימת בפוסטגרס.
+    ×ک×‘×œ×ھ ×‍×©×ھ×‍×©×™×‌ â€“ ×‍×•×ھ×گ×‌ ×œ×،×›×™×‍×” ×”×§×™×™×‍×ھ ×‘×¤×•×،×ک×’×¨×،.
 
-    חשוב:
-    - אין עמודה id.
-    - telegram_id הוא ה-Primary Key.
+    ×—×©×•×‘:
+    - ×گ×™×ں ×¢×‍×•×“×” id.
+    - telegram_id ×”×•×گ ×”-Primary Key.
     """
 
     __tablename__ = "users"
@@ -30,7 +30,7 @@ class User(Base):
 
 class Transaction(Base):
     """
-    טבלת טרנזקציות פנימיות (Off-Chain Ledger).
+    ×ک×‘×œ×ھ ×ک×¨× ×–×§×¦×™×•×ھ ×¤× ×™×‍×™×•×ھ (Off-Chain Ledger).
     """
 
     __tablename__ = "transactions"
@@ -38,9 +38,10 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # מזהי טלגרם (לא FK פורמלי, פשוט שמירה של ה-ID)
+    # ×‍×–×”×™ ×ک×œ×’×¨×‌ (×œ×گ FK ×¤×•×¨×‍×œ×™, ×¤×©×•×ک ×©×‍×™×¨×” ×©×œ ×”-ID)
     from_user = Column(BigInteger, nullable=True)
     to_user = Column(BigInteger, nullable=True)
 
     amount_slh = Column(Numeric(24, 6), nullable=False)
     tx_type = Column(String(50), nullable=False)
+from app.models_investments import Deposit, SLHLedger, RedemptionRequest  # noqa: F401
