@@ -138,3 +138,6 @@ def admin_approve_redeem(req: AdminApproveRedeemIn, db: Session = Depends(get_db
     return {"status": "ok", "redeem_id": r.id, "debited_slh": str(r.slh_amount)}
 # redeploy ping 2025-12-30T14:56:35.5334217+02:00
 
+
+# redeploy ping 2025-12-30T14:57:38.9731007+02:00
+
