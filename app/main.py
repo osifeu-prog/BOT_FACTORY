@@ -5,6 +5,7 @@ from starlette.responses import PlainTextResponse
 import os
 import logging
 import inspect
+import asyncio
 
 from starlette.responses import PlainTextResponse
 from typing import Any
@@ -114,7 +115,7 @@ def _startup_best_effort() -> None:
                 from app.bot.investor_wallet_bot import initialize_bot as _init_bot  # lazy import
                 _res = _init_bot()
                 if inspect.isawaitable(_res):
-                    await _res
+                    asyncio.create_task(_res)
             except Exception as e:
                 import traceback, sys
                 print(f"bot_init: {e}", file=sys.stderr)
