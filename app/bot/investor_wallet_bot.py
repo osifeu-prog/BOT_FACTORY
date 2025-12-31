@@ -40,8 +40,8 @@ def _is_admin(telegram_id: int) -> bool:
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "ברוך הבא ל-SLH Investor Gateway.\n\n"
-        "פקודות זמינות:\n"
+        "×‘×¨×•×ڑ ×”×‘×گ ×œ-SLH Investor Gateway.\n\n"
+        "×¤×§×•×“×•×ھ ×–×‍×™× ×•×ھ:\n"
         "/whoami\n"
         "/balance\n"
         "/history\n"
@@ -52,13 +52,13 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "עזרה / פקודות:\n\n"
-        "/whoami  פרופיל טלגרם\n"
-        "/balance  יתרת SLH (Ledger ב-Postgres)\n"
-        "/history  היסטוריה (Ledger)\n"
-        "/admin_dedupe  בדיקת dedupe ל-telegram_updates (Admin)\n"
-        "/admin_credit_ledger <amount> [memo]  הזרקת SLH ל-Ledger (Admin)\n"
-        "דוגמא: /admin_credit_ledger 1.00 Seed"
+        "×¢×–×¨×” / ×¤×§×•×“×•×ھ:\n\n"
+        "/whoami  ×¤×¨×•×¤×™×œ ×ک×œ×’×¨×‌\n"
+        "/balance  ×™×ھ×¨×ھ SLH (Ledger ×‘-Postgres)\n"
+        "/history  ×”×™×،×ک×•×¨×™×” (Ledger)\n"
+        "/admin_dedupe  ×‘×“×™×§×ھ dedupe ×œ-telegram_updates (Admin)\n"
+        "/admin_credit_ledger <amount> [memo]  ×”×–×¨×§×ھ SLH ×œ-Ledger (Admin)\n"
+        "×“×•×’×‍×گ: /admin_credit_ledger 1.00 Seed"
     )
 
 async def whoami_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -85,14 +85,14 @@ async def balance_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("⚠️ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("âڑ ï¸ڈ Ledger DB helpers not available.")
         return
     try:
         bal = db["get_balance"](telegram_id=int(u.id))
-        await update.effective_message.reply_text(f"💰 SLH Balance (Ledger)\n{bal}")
+        await update.effective_message.reply_text(f"ًں’° SLH Balance (Ledger)\n{bal}")
     except Exception as e:
         log.exception("balance failed")
-        await update.effective_message.reply_text(f"⚠️ Balance error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"âڑ ï¸ڈ Balance error: {type(e).__name__}")
 
 async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -100,16 +100,16 @@ async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("⚠️ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("âڑ ï¸ڈ Ledger DB helpers not available.")
         return
     try:
         rows = db["get_history"](telegram_id=int(u.id), limit=10)
         lines = [str(r) for r in (rows or [])]
-        text = "📜 History (Ledger) — last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
+        text = "ًں“œ History (Ledger) â€” last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
         await update.effective_message.reply_text(text)
     except Exception as e:
         log.exception("history failed")
-        await update.effective_message.reply_text(f"⚠️ History error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"âڑ ï¸ڈ History error: {type(e).__name__}")
 
 async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -120,7 +120,7 @@ async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.effective_message.reply_text(str(dedupe_status()))
     except Exception as e:
         log.exception("dedupe_status failed")
-        await update.effective_message.reply_text(f"⚠️ dedupe error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"âڑ ï¸ڈ dedupe error: {type(e).__name__}")
 
 async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -153,49 +153,65 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     try:
         amt = Decimal(amount_s)
     except (InvalidOperation, TypeError):
-        await update.effective_message.reply_text("❌ Invalid amount.")
+        await update.effective_message.reply_text("â‌Œ Invalid amount.")
         return
 
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("⚠️ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("âڑ ï¸ڈ Ledger DB helpers not available.")
         return
     try:
         tx_id = db["admin_credit"](telegram_id=int(target_id), amount=amt, memo=memo)
         await update.effective_message.reply_text(
-            "✅ Ledger credited\n"
+            "âœ… Ledger credited\n"
             f"telegram_id: {target_id}\n"
             f"amount: {amt:.4f} SLH\n"
             f"tx_id: {tx_id}"
         )
     except Exception as e:
         log.exception("admin_credit failed")
-        await update.effective_message.reply_text(f"⚠️ credit error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"âڑ ï¸ڈ credit error: {type(e).__name__}")
 
 async def unknown_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_message.reply_text("❓ פקודה לא מוכרת. נסה /help")
+    await update.effective_message.reply_text("â‌“ ×¤×§×•×“×” ×œ×گ ×‍×•×›×¨×ھ. × ×،×” /help")
 
 def ensure_handlers() -> None:
     app = get_tg_app()
     if getattr(app, "_handlers_installed", False):
         return
-    app.add_handler(CommandHandler("start", start_cmd))
-    app.add_handler(CommandHandler("help", help_cmd))
-    app.add_handler(CommandHandler("whoami", whoami_cmd))
-    app.add_handler(CommandHandler("balance", balance_cmd))
-    app.add_handler(CommandHandler("history", history_cmd))
-    app.add_handler(CommandHandler("admin_dedupe", admin_dedupe_cmd))
-    app.add_handler(CommandHandler("admin_credit_ledger", admin_credit_ledger_cmd))
-    app.add_handler(MessageHandler(filters.COMMAND, unknown_cmd))
+    _TG_APP.add_handler(CommandHandler("start", start_cmd))
+    _TG_APP.add_handler(CommandHandler("help", help_cmd))
+    _TG_APP.add_handler(CommandHandler("whoami", whoami_cmd))
+    _TG_APP.add_handler(CommandHandler("balance", balance_cmd))
+    _TG_APP.add_handler(CommandHandler("history", history_cmd))
+    _TG_APP.add_handler(CommandHandler("admin_dedupe", admin_dedupe_cmd))
+    _TG_APP.add_handler(CommandHandler("admin_credit_ledger", admin_credit_ledger_cmd))
+    _TG_APP.add_handler(MessageHandler(filters.COMMAND, unknown_cmd))
     setattr(app, "_handlers_installed", True)
 
 def initialize_bot() -> None:
     ensure_handlers()
 
 async def process_webhook(update_dict: Dict[str, Any]) -> None:
-    ensure_handlers()
-    app = get_tg_app()
+    app = await get_tg_app_initialized()
     upd = Update.de_json(update_dict, app.bot)
     if upd is None:
         return
     await app.process_update(upd)
+
+async def get_tg_app_initialized():
+    """
+    Build/return the PTB Application and ensure it's initialized exactly once.
+    Required for webhook mode (no run_polling()).
+    """
+    global _TG_APP, _TG_APP_INIT
+
+    app = get_tg_app()
+    # ensure handlers are installed on the global app
+    ensure_handlers()
+
+    if not _TG_APP_INIT:
+        # PTB v20+ requires initialize() before process_update()
+        await app.initialize()
+        _TG_APP_INIT = True
+    return app
