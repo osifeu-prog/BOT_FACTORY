@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 log = logging.getLogger("bot_factory")
 
@@ -51,6 +51,8 @@ app = FastAPI(
     version=BUILD_ID or "dev",
 )
 
+
+@app.get("/robots.txt", response_class=PlainTextResponse)`nasync def robots_txt():`n    return "User-agent: *\nDisallow: /\n"`n
 @app.get("/health")
 def health() -> dict[str, Any]:
     # Must never touch DB/Telegram. Only return cheap info.
