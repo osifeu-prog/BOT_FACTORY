@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from starlette.responses import PlainTextResponse
+
 import os
 import logging
+
+from starlette.responses import PlainTextResponse
 from typing import Any
+
+from starlette.responses import PlainTextResponse
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
+
+from starlette.responses import PlainTextResponse
 
 log = logging.getLogger("bot_factory")
 
@@ -52,7 +60,6 @@ app = FastAPI(
 )
 
 
-@app.get("/robots.txt", response_class=PlainTextResponse)`nasync def robots_txt():`n    return "User-agent: *\nDisallow: /\n"`n
 @app.get("/health")
 def health() -> dict[str, Any]:
     # Must never touch DB/Telegram. Only return cheap info.
@@ -139,3 +146,7 @@ async def telegram_webhook(request: Request) -> JSONResponse:
         _record_error("process_webhook", e)
         # Still return 200 to avoid Telegram storm; log already captured
         return JSONResponse({"ok": False, "reason": "process_failed"}, status_code=200)
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt():
+    return "User-agent: *\nDisallow: /\n"
