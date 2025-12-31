@@ -40,8 +40,8 @@ def _is_admin(telegram_id: int) -> bool:
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "×‘×¨×•×ڑ ×”×‘×گ ×œ-SLH Investor Gateway.\n\n"
-        "×¤×§×•×“×•×ھ ×–×‍×™× ×•×ھ:\n"
+        "أ—â€کأ—آ¨أ—â€¢أ—ع‘ أ—â€‌أ—â€کأ—ع¯ أ—إ“-SLH Investor Gateway.\n\n"
+        "أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾ أ—â€“أ—â€چأ—â„¢أ—آ أ—â€¢أ—ع¾:\n"
         "/whoami\n"
         "/balance\n"
         "/history\n"
@@ -52,13 +52,13 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "×¢×–×¨×” / ×¤×§×•×“×•×ھ:\n\n"
-        "/whoami  ×¤×¨×•×¤×™×œ ×ک×œ×’×¨×‌\n"
-        "/balance  ×™×ھ×¨×ھ SLH (Ledger ×‘-Postgres)\n"
-        "/history  ×”×™×،×ک×•×¨×™×” (Ledger)\n"
-        "/admin_dedupe  ×‘×“×™×§×ھ dedupe ×œ-telegram_updates (Admin)\n"
-        "/admin_credit_ledger <amount> [memo]  ×”×–×¨×§×ھ SLH ×œ-Ledger (Admin)\n"
-        "×“×•×’×‍×گ: /admin_credit_ledger 1.00 Seed"
+        "أ—آ¢أ—â€“أ—آ¨أ—â€‌ / أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾:\n\n"
+        "/whoami  أ—آ¤أ—آ¨أ—â€¢أ—آ¤أ—â„¢أ—إ“ أ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ\n"
+        "/balance  أ—â„¢أ—ع¾أ—آ¨أ—ع¾ SLH (Ledger أ—â€ک-Postgres)\n"
+        "/history  أ—â€‌أ—â„¢أ—طŒأ—ع©أ—â€¢أ—آ¨أ—â„¢أ—â€‌ (Ledger)\n"
+        "/admin_dedupe  أ—â€کأ—â€œأ—â„¢أ—آ§أ—ع¾ dedupe أ—إ“-telegram_updates (Admin)\n"
+        "/admin_credit_ledger <amount> [memo]  أ—â€‌أ—â€“أ—آ¨أ—آ§أ—ع¾ SLH أ—إ“-Ledger (Admin)\n"
+        "أ—â€œأ—â€¢أ—â€™أ—â€چأ—ع¯: /admin_credit_ledger 1.00 Seed"
     )
 
 async def whoami_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -85,14 +85,14 @@ async def balance_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("âڑ ï¸ڈ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("أ¢ع‘آ أ¯آ¸عˆ Ledger DB helpers not available.")
         return
     try:
         bal = db["get_balance"](telegram_id=int(u.id))
-        await update.effective_message.reply_text(f"ًں’° SLH Balance (Ledger)\n{bal}")
+        await update.effective_message.reply_text(f"ظ‹ع؛â€™آ° SLH Balance (Ledger)\n{bal}")
     except Exception as e:
         log.exception("balance failed")
-        await update.effective_message.reply_text(f"âڑ ï¸ڈ Balance error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ Balance error: {type(e).__name__}")
 
 async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -100,16 +100,16 @@ async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("âڑ ï¸ڈ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("أ¢ع‘آ أ¯آ¸عˆ Ledger DB helpers not available.")
         return
     try:
         rows = db["get_history"](telegram_id=int(u.id), limit=10)
         lines = [str(r) for r in (rows or [])]
-        text = "ًں“œ History (Ledger) â€” last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
+        text = "ظ‹ع؛â€œإ“ History (Ledger) أ¢â‚¬â€‌ last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
         await update.effective_message.reply_text(text)
     except Exception as e:
         log.exception("history failed")
-        await update.effective_message.reply_text(f"âڑ ï¸ڈ History error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ History error: {type(e).__name__}")
 
 async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -120,7 +120,7 @@ async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.effective_message.reply_text(str(dedupe_status()))
     except Exception as e:
         log.exception("dedupe_status failed")
-        await update.effective_message.reply_text(f"âڑ ï¸ڈ dedupe error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ dedupe error: {type(e).__name__}")
 
 async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -153,27 +153,27 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     try:
         amt = Decimal(amount_s)
     except (InvalidOperation, TypeError):
-        await update.effective_message.reply_text("â‌Œ Invalid amount.")
+        await update.effective_message.reply_text("أ¢â€Œإ’ Invalid amount.")
         return
 
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("âڑ ï¸ڈ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("أ¢ع‘آ أ¯آ¸عˆ Ledger DB helpers not available.")
         return
     try:
         tx_id = db["admin_credit"](telegram_id=int(target_id), amount=amt, memo=memo)
         await update.effective_message.reply_text(
-            "âœ… Ledger credited\n"
+            "أ¢إ“â€¦ Ledger credited\n"
             f"telegram_id: {target_id}\n"
             f"amount: {amt:.4f} SLH\n"
             f"tx_id: {tx_id}"
         )
     except Exception as e:
         log.exception("admin_credit failed")
-        await update.effective_message.reply_text(f"âڑ ï¸ڈ credit error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ credit error: {type(e).__name__}")
 
 async def unknown_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_message.reply_text("â‌“ ×¤×§×•×“×” ×œ×گ ×‍×•×›×¨×ھ. × ×،×” /help")
+    await update.effective_message.reply_text("أ¢â€Œâ€œ أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€‌ أ—إ“أ—ع¯ أ—â€چأ—â€¢أ—â€؛أ—آ¨أ—ع¾. أ—آ أ—طŒأ—â€‌ /help")
 
 def ensure_handlers() -> None:
     app = get_tg_app()
