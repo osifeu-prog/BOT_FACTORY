@@ -14,6 +14,8 @@ if config.config_file_name is not None:
 # Import your SQLAlchemy Base metadata
 # MUST exist: app/database.py defines Base
 from app.database import Base  # noqa: E402
+# Ensure models are imported so Base.metadata includes tables
+import app.models_investments  # noqa: F401
 
 target_metadata = Base.metadata
 
