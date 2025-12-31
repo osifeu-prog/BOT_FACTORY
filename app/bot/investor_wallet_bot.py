@@ -40,8 +40,8 @@ def _is_admin(telegram_id: int) -> bool:
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "ط£â€”أ¢â‚¬ع©ط£â€”ط¢آ¨ط£â€”أ¢â‚¬آ¢ط£â€”ط¹â€ک ط£â€”أ¢â‚¬â€Œط£â€”أ¢â‚¬ع©ط£â€”ط¹آ¯ ط£â€”ط¥â€œ-SLH Investor Gateway.\n\n"
-        "ط£â€”ط¢آ¤ط£â€”ط¢آ§ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬آ¢ط£â€”ط¹آ¾ ط£â€”أ¢â‚¬â€œط£â€”أ¢â‚¬ع†ط£â€”أ¢â€‍آ¢ط£â€”ط¢آ ط£â€”أ¢â‚¬آ¢ط£â€”ط¹آ¾:\n"
+        "ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¹آ©ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¹أ¢â‚¬ع© ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¹آ©ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¯ ط·آ£أ¢â‚¬â€‌ط·آ¥أ¢â‚¬إ“-SLH Investor Gateway.\n\n"
+        "ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¤ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ§ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¥â€œط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾ ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ“ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¹â€ ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â‚¬â€چط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾:\n"
         "/whoami\n"
         "/balance\n"
         "/history\n"
@@ -52,13 +52,13 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "ط£â€”ط¢آ¢ط£â€”أ¢â‚¬â€œط£â€”ط¢آ¨ط£â€”أ¢â‚¬â€Œ / ط£â€”ط¢آ¤ط£â€”ط¢آ§ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬آ¢ط£â€”ط¹آ¾:\n\n"
-        "/whoami  ط£â€”ط¢آ¤ط£â€”ط¢آ¨ط£â€”أ¢â‚¬آ¢ط£â€”ط¢آ¤ط£â€”أ¢â€‍آ¢ط£â€”ط¥â€œ ط£â€”ط¹آ©ط£â€”ط¥â€œط£â€”أ¢â‚¬â„¢ط£â€”ط¢آ¨ط£â€”أ¢â‚¬إ’\n"
-        "/balance  ط£â€”أ¢â€‍آ¢ط£â€”ط¹آ¾ط£â€”ط¢آ¨ط£â€”ط¹آ¾ SLH (Ledger ط£â€”أ¢â‚¬ع©-Postgres)\n"
-        "/history  ط£â€”أ¢â‚¬â€Œط£â€”أ¢â€‍آ¢ط£â€”ط·إ’ط£â€”ط¹آ©ط£â€”أ¢â‚¬آ¢ط£â€”ط¢آ¨ط£â€”أ¢â€‍آ¢ط£â€”أ¢â‚¬â€Œ (Ledger)\n"
-        "/admin_dedupe  ط£â€”أ¢â‚¬ع©ط£â€”أ¢â‚¬إ“ط£â€”أ¢â€‍آ¢ط£â€”ط¢آ§ط£â€”ط¹آ¾ dedupe ط£â€”ط¥â€œ-telegram_updates (Admin)\n"
-        "/admin_credit_ledger <amount> [memo]  ط£â€”أ¢â‚¬â€Œط£â€”أ¢â‚¬â€œط£â€”ط¢آ¨ط£â€”ط¢آ§ط£â€”ط¹آ¾ SLH ط£â€”ط¥â€œ-Ledger (Admin)\n"
-        "ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬â„¢ط£â€”أ¢â‚¬ع†ط£â€”ط¹آ¯: /admin_credit_ledger 1.00 Seed"
+        "ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ“ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ / ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¤ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ§ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¥â€œط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾:\n\n"
+        "/whoami  ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¤ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¤ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â‚¬â€چط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¥أ¢â‚¬إ“ ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ©ط·آ£أ¢â‚¬â€‌ط·آ¥أ¢â‚¬إ“ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â€‍آ¢ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¥â€™\n"
+        "/balance  ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â‚¬â€چط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾ SLH (Ledger ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¹آ©-Postgres)\n"
+        "/history  ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â‚¬â€چط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ·ط¥â€™ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ©ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â‚¬â€چط¢آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ (Ledger)\n"
+        "/admin_dedupe  ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¹آ©ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¥â€œط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â‚¬â€چط¢آ¢ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ§ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾ dedupe ط·آ£أ¢â‚¬â€‌ط·آ¥أ¢â‚¬إ“-telegram_updates (Admin)\n"
+        "/admin_credit_ledger <amount> [memo]  ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ“ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ§ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾ SLH ط·آ£أ¢â‚¬â€‌ط·آ¥أ¢â‚¬إ“-Ledger (Admin)\n"
+        "ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¥â€œط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â€‍آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¹â€ ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¯: /admin_credit_ledger 1.00 Seed"
     )
 
 async def whoami_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -85,14 +85,14 @@ async def balance_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Ledger DB helpers not available.")
+        await update.effective_message.reply_text("ط·آ£ط¢آ¢ط·آ¹أ¢â‚¬ع©ط·آ¢ط¢آ ط·آ£ط¢آ¯ط·آ¢ط¢آ¸ط·آ¹ط«â€  Ledger DB helpers not available.")
         return
     try:
         bal = db["get_balance"](telegram_id=int(u.id))
-        await update.effective_message.reply_text(f"ط¸â€¹ط¹ط›أ¢â‚¬â„¢ط¢آ° SLH Balance (Ledger)\n{bal}")
+        await update.effective_message.reply_text(f"ط·آ¸أ¢â‚¬آ¹ط·آ¹ط·â€؛ط£آ¢أ¢â€ڑآ¬أ¢â€‍آ¢ط·آ¢ط¢آ° SLH Balance (Ledger)\n{bal}")
     except Exception as e:
         log.exception("balance failed")
-        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Balance error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط·آ£ط¢آ¢ط·آ¹أ¢â‚¬ع©ط·آ¢ط¢آ ط·آ£ط¢آ¯ط·آ¢ط¢آ¸ط·آ¹ط«â€  Balance error: {type(e).__name__}")
 
 async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -100,16 +100,16 @@ async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Ledger DB helpers not available.")
+        await update.effective_message.reply_text("ط·آ£ط¢آ¢ط·آ¹أ¢â‚¬ع©ط·آ¢ط¢آ ط·آ£ط¢آ¯ط·آ¢ط¢آ¸ط·آ¹ط«â€  Ledger DB helpers not available.")
         return
     try:
         rows = db["get_history"](telegram_id=int(u.id), limit=10)
         lines = [str(r) for r in (rows or [])]
-        text = "ط¸â€¹ط¹ط›أ¢â‚¬إ“ط¥â€œ History (Ledger) ط£آ¢أ¢â€ڑآ¬أ¢â‚¬â€Œ last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
+        text = "ط·آ¸أ¢â‚¬آ¹ط·آ¹ط·â€؛ط£آ¢أ¢â€ڑآ¬ط¥â€œط·آ¥أ¢â‚¬إ“ History (Ledger) ط·آ£ط¢آ¢ط£آ¢أ¢â‚¬ع‘ط¢آ¬ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
         await update.effective_message.reply_text(text)
     except Exception as e:
         log.exception("history failed")
-        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† History error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط·آ£ط¢آ¢ط·آ¹أ¢â‚¬ع©ط·آ¢ط¢آ ط·آ£ط¢آ¯ط·آ¢ط¢آ¸ط·آ¹ط«â€  History error: {type(e).__name__}")
 
 async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -120,7 +120,7 @@ async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.effective_message.reply_text(str(dedupe_status()))
     except Exception as e:
         log.exception("dedupe_status failed")
-        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† dedupe error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط·آ£ط¢آ¢ط·آ¹أ¢â‚¬ع©ط·آ¢ط¢آ ط·آ£ط¢آ¯ط·آ¢ط¢آ¸ط·آ¹ط«â€  dedupe error: {type(e).__name__}")
 
 async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -153,27 +153,27 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     try:
         amt = Decimal(amount_s)
     except (InvalidOperation, TypeError):
-        await update.effective_message.reply_text("ط£آ¢أ¢â‚¬إ’ط¥â€™ Invalid amount.")
+        await update.effective_message.reply_text("ط·آ£ط¢آ¢ط£آ¢أ¢â€ڑآ¬ط¥â€™ط·آ¥أ¢â‚¬â„¢ Invalid amount.")
         return
 
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Ledger DB helpers not available.")
+        await update.effective_message.reply_text("ط·آ£ط¢آ¢ط·آ¹أ¢â‚¬ع©ط·آ¢ط¢آ ط·آ£ط¢آ¯ط·آ¢ط¢آ¸ط·آ¹ط«â€  Ledger DB helpers not available.")
         return
     try:
         tx_id = db["admin_credit"](telegram_id=int(target_id), amount=amt, memo=memo)
         await update.effective_message.reply_text(
-            "ط£آ¢ط¥â€œأ¢â‚¬آ¦ Ledger credited\n"
+            "ط·آ£ط¢آ¢ط·آ¥أ¢â‚¬إ“ط£آ¢أ¢â€ڑآ¬ط¢آ¦ Ledger credited\n"
             f"telegram_id: {target_id}\n"
             f"amount: {amt:.4f} SLH\n"
             f"tx_id: {tx_id}"
         )
     except Exception as e:
         log.exception("admin_credit failed")
-        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† credit error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط·آ£ط¢آ¢ط·آ¹أ¢â‚¬ع©ط·آ¢ط¢آ ط·آ£ط¢آ¯ط·آ¢ط¢آ¸ط·آ¹ط«â€  credit error: {type(e).__name__}")
 
 async def unknown_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_message.reply_text("ط£آ¢أ¢â‚¬إ’أ¢â‚¬إ“ ط£â€”ط¢آ¤ط£â€”ط¢آ§ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬â€Œ ط£â€”ط¥â€œط£â€”ط¹آ¯ ط£â€”أ¢â‚¬ع†ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬ط›ط£â€”ط¢آ¨ط£â€”ط¹آ¾. ط£â€”ط¢آ ط£â€”ط·إ’ط£â€”أ¢â‚¬â€Œ /help")
+    await update.effective_message.reply_text("ط·آ£ط¢آ¢ط£آ¢أ¢â€ڑآ¬ط¥â€™ط£آ¢أ¢â€ڑآ¬ط¥â€œ ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¤ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ§ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¥â€œط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ ط·آ£أ¢â‚¬â€‌ط·آ¥أ¢â‚¬إ“ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¯ ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¹â€ ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط¢آ¢ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬ط·â€؛ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ¨ط·آ£أ¢â‚¬â€‌ط·آ¹ط¢آ¾. ط·آ£أ¢â‚¬â€‌ط·آ¢ط¢آ ط·آ£أ¢â‚¬â€‌ط·آ·ط¥â€™ط·آ£أ¢â‚¬â€‌ط£آ¢أ¢â€ڑآ¬أ¢â‚¬إ’ /help")
 
 def ensure_handlers() -> None:
     app = get_tg_app()
@@ -200,24 +200,25 @@ async def process_webhook(update_dict: Dict[str, Any]) -> None:
     await app.process_update(upd)
 async def get_tg_app_initialized():
     """
-    Returns a python-telegram-bot Application that is safe to use in webhook mode.
-    Ensures Application.initialize() is awaited exactly once.
+    Webhook-safe PTB Application initializer.
+    Guarantees initialize() is executed once and NEVER throws NameError on _TG_APP_INIT.
     """
-    global _TG_APP_INIT
+    import inspect
+
+    # Hard guard: ensure the flag exists even if file got edited weirdly
+    globals().setdefault("_TG_APP_INIT", False)
 
     app = get_tg_app()
 
-    # Initialize once (required by PTB before process_update)
-    if not _TG_APP_INIT:
+    if not globals()["_TG_APP_INIT"]:
         try:
             res = app.initialize()
-            # initialize() is awaitable on PTB v20+
-            if hasattr(res, "__await__"):
+            if inspect.isawaitable(res):
                 await res
         except Exception:
-            # Some versions may already be initialized / different semantics
+            # do not break webhook processing; worst case process_update will error and we log elsewhere
             pass
-        _TG_APP_INIT = True
+        globals()["_TG_APP_INIT"] = True
 
     return app
 
