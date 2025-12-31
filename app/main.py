@@ -24,6 +24,15 @@ app = FastAPI(title="SLH Investor Gateway")
 
 
 
+
+@app.get("/version")
+def version():
+    return {
+        "railway_git_commit_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA"),
+        "railway_git_branch": os.getenv("RAILWAY_GIT_BRANCH"),
+        "railway_service": os.getenv("RAILWAY_SERVICE_NAME"),
+    }
+
 app.include_router(invest_router)
 def _slh_is_private_update(payload: Dict[str, Any]) -> bool:
     try:
@@ -161,6 +170,6 @@ async def telegram_webhook(request: Request):
         await process_webhook(update_dict)
     except Exception:
         logger.exception("telegram webhook processing failed")
-        # ×—×©×•×‘: ×‍×—×–×™×¨×™×‌ 200 ×›×“×™ ×©×ک×œ×’×¨×‌ ×œ×گ ×™×¢×©×” retry ×گ×™× ×،×•×¤×™
+        # أ—â€”أ—آ©أ—â€¢أ—â€ک: أ—â€چأ—â€”أ—â€“أ—â„¢أ—آ¨أ—â„¢أ—â€Œ 200 أ—â€؛أ—â€œأ—â„¢ أ—آ©أ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ أ—إ“أ—ع¯ أ—â„¢أ—آ¢أ—آ©أ—â€‌ retry أ—ع¯أ—â„¢أ—آ أ—طŒأ—â€¢أ—آ¤أ—â„¢
         return {"ok": True}
     return {"ok": True}
