@@ -40,8 +40,8 @@ def _is_admin(telegram_id: int) -> bool:
 
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "أ—â€کأ—آ¨أ—â€¢أ—ع‘ أ—â€‌أ—â€کأ—ع¯ أ—إ“-SLH Investor Gateway.\n\n"
-        "أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾ أ—â€“أ—â€چأ—â„¢أ—آ أ—â€¢أ—ع¾:\n"
+        "ط£â€”أ¢â‚¬ع©ط£â€”ط¢آ¨ط£â€”أ¢â‚¬آ¢ط£â€”ط¹â€ک ط£â€”أ¢â‚¬â€Œط£â€”أ¢â‚¬ع©ط£â€”ط¹آ¯ ط£â€”ط¥â€œ-SLH Investor Gateway.\n\n"
+        "ط£â€”ط¢آ¤ط£â€”ط¢آ§ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬آ¢ط£â€”ط¹آ¾ ط£â€”أ¢â‚¬â€œط£â€”أ¢â‚¬ع†ط£â€”أ¢â€‍آ¢ط£â€”ط¢آ ط£â€”أ¢â‚¬آ¢ط£â€”ط¹آ¾:\n"
         "/whoami\n"
         "/balance\n"
         "/history\n"
@@ -52,13 +52,13 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "أ—آ¢أ—â€“أ—آ¨أ—â€‌ / أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€¢أ—ع¾:\n\n"
-        "/whoami  أ—آ¤أ—آ¨أ—â€¢أ—آ¤أ—â„¢أ—إ“ أ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ\n"
-        "/balance  أ—â„¢أ—ع¾أ—آ¨أ—ع¾ SLH (Ledger أ—â€ک-Postgres)\n"
-        "/history  أ—â€‌أ—â„¢أ—طŒأ—ع©أ—â€¢أ—آ¨أ—â„¢أ—â€‌ (Ledger)\n"
-        "/admin_dedupe  أ—â€کأ—â€œأ—â„¢أ—آ§أ—ع¾ dedupe أ—إ“-telegram_updates (Admin)\n"
-        "/admin_credit_ledger <amount> [memo]  أ—â€‌أ—â€“أ—آ¨أ—آ§أ—ع¾ SLH أ—إ“-Ledger (Admin)\n"
-        "أ—â€œأ—â€¢أ—â€™أ—â€چأ—ع¯: /admin_credit_ledger 1.00 Seed"
+        "ط£â€”ط¢آ¢ط£â€”أ¢â‚¬â€œط£â€”ط¢آ¨ط£â€”أ¢â‚¬â€Œ / ط£â€”ط¢آ¤ط£â€”ط¢آ§ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬آ¢ط£â€”ط¹آ¾:\n\n"
+        "/whoami  ط£â€”ط¢آ¤ط£â€”ط¢آ¨ط£â€”أ¢â‚¬آ¢ط£â€”ط¢آ¤ط£â€”أ¢â€‍آ¢ط£â€”ط¥â€œ ط£â€”ط¹آ©ط£â€”ط¥â€œط£â€”أ¢â‚¬â„¢ط£â€”ط¢آ¨ط£â€”أ¢â‚¬إ’\n"
+        "/balance  ط£â€”أ¢â€‍آ¢ط£â€”ط¹آ¾ط£â€”ط¢آ¨ط£â€”ط¹آ¾ SLH (Ledger ط£â€”أ¢â‚¬ع©-Postgres)\n"
+        "/history  ط£â€”أ¢â‚¬â€Œط£â€”أ¢â€‍آ¢ط£â€”ط·إ’ط£â€”ط¹آ©ط£â€”أ¢â‚¬آ¢ط£â€”ط¢آ¨ط£â€”أ¢â€‍آ¢ط£â€”أ¢â‚¬â€Œ (Ledger)\n"
+        "/admin_dedupe  ط£â€”أ¢â‚¬ع©ط£â€”أ¢â‚¬إ“ط£â€”أ¢â€‍آ¢ط£â€”ط¢آ§ط£â€”ط¹آ¾ dedupe ط£â€”ط¥â€œ-telegram_updates (Admin)\n"
+        "/admin_credit_ledger <amount> [memo]  ط£â€”أ¢â‚¬â€Œط£â€”أ¢â‚¬â€œط£â€”ط¢آ¨ط£â€”ط¢آ§ط£â€”ط¹آ¾ SLH ط£â€”ط¥â€œ-Ledger (Admin)\n"
+        "ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬â„¢ط£â€”أ¢â‚¬ع†ط£â€”ط¹آ¯: /admin_credit_ledger 1.00 Seed"
     )
 
 async def whoami_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -85,14 +85,14 @@ async def balance_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("أ¢ع‘آ أ¯آ¸عˆ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Ledger DB helpers not available.")
         return
     try:
         bal = db["get_balance"](telegram_id=int(u.id))
-        await update.effective_message.reply_text(f"ظ‹ع؛â€™آ° SLH Balance (Ledger)\n{bal}")
+        await update.effective_message.reply_text(f"ط¸â€¹ط¹ط›أ¢â‚¬â„¢ط¢آ° SLH Balance (Ledger)\n{bal}")
     except Exception as e:
         log.exception("balance failed")
-        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ Balance error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Balance error: {type(e).__name__}")
 
 async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -100,16 +100,16 @@ async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("أ¢ع‘آ أ¯آ¸عˆ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Ledger DB helpers not available.")
         return
     try:
         rows = db["get_history"](telegram_id=int(u.id), limit=10)
         lines = [str(r) for r in (rows or [])]
-        text = "ظ‹ع؛â€œإ“ History (Ledger) أ¢â‚¬â€‌ last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
+        text = "ط¸â€¹ط¹ط›أ¢â‚¬إ“ط¥â€œ History (Ledger) ط£آ¢أ¢â€ڑآ¬أ¢â‚¬â€Œ last 10\n\n" + ("\n".join(lines) if lines else "(empty)")
         await update.effective_message.reply_text(text)
     except Exception as e:
         log.exception("history failed")
-        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ History error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† History error: {type(e).__name__}")
 
 async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -120,7 +120,7 @@ async def admin_dedupe_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.effective_message.reply_text(str(dedupe_status()))
     except Exception as e:
         log.exception("dedupe_status failed")
-        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ dedupe error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† dedupe error: {type(e).__name__}")
 
 async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u = update.effective_user
@@ -153,27 +153,27 @@ async def admin_credit_ledger_cmd(update: Update, context: ContextTypes.DEFAULT_
     try:
         amt = Decimal(amount_s)
     except (InvalidOperation, TypeError):
-        await update.effective_message.reply_text("أ¢â€Œإ’ Invalid amount.")
+        await update.effective_message.reply_text("ط£آ¢أ¢â‚¬إ’ط¥â€™ Invalid amount.")
         return
 
     db = _db_try_import()
     if not db:
-        await update.effective_message.reply_text("أ¢ع‘آ أ¯آ¸عˆ Ledger DB helpers not available.")
+        await update.effective_message.reply_text("ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† Ledger DB helpers not available.")
         return
     try:
         tx_id = db["admin_credit"](telegram_id=int(target_id), amount=amt, memo=memo)
         await update.effective_message.reply_text(
-            "أ¢إ“â€¦ Ledger credited\n"
+            "ط£آ¢ط¥â€œأ¢â‚¬آ¦ Ledger credited\n"
             f"telegram_id: {target_id}\n"
             f"amount: {amt:.4f} SLH\n"
             f"tx_id: {tx_id}"
         )
     except Exception as e:
         log.exception("admin_credit failed")
-        await update.effective_message.reply_text(f"أ¢ع‘آ أ¯آ¸عˆ credit error: {type(e).__name__}")
+        await update.effective_message.reply_text(f"ط£آ¢ط¹â€کط¢آ ط£آ¯ط¢آ¸ط¹ث† credit error: {type(e).__name__}")
 
 async def unknown_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_message.reply_text("أ¢â€Œâ€œ أ—آ¤أ—آ§أ—â€¢أ—â€œأ—â€‌ أ—إ“أ—ع¯ أ—â€چأ—â€¢أ—â€؛أ—آ¨أ—ع¾. أ—آ أ—طŒأ—â€‌ /help")
+    await update.effective_message.reply_text("ط£آ¢أ¢â‚¬إ’أ¢â‚¬إ“ ط£â€”ط¢آ¤ط£â€”ط¢آ§ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬إ“ط£â€”أ¢â‚¬â€Œ ط£â€”ط¥â€œط£â€”ط¹آ¯ ط£â€”أ¢â‚¬ع†ط£â€”أ¢â‚¬آ¢ط£â€”أ¢â‚¬ط›ط£â€”ط¢آ¨ط£â€”ط¹آ¾. ط£â€”ط¢آ ط£â€”ط·إ’ط£â€”أ¢â‚¬â€Œ /help")
 
 def ensure_handlers() -> None:
     app = get_tg_app()
@@ -198,20 +198,26 @@ async def process_webhook(update_dict: Dict[str, Any]) -> None:
     if upd is None:
         return
     await app.process_update(upd)
-
 async def get_tg_app_initialized():
     """
-    Build/return the PTB Application and ensure it's initialized exactly once.
-    Required for webhook mode (no run_polling()).
+    Returns a python-telegram-bot Application that is safe to use in webhook mode.
+    Ensures Application.initialize() is awaited exactly once.
     """
-    global _TG_APP, _TG_APP_INIT
+    global _TG_APP_INIT
 
     app = get_tg_app()
-    # ensure handlers are installed on the global app
-    ensure_handlers()
 
+    # Initialize once (required by PTB before process_update)
     if not _TG_APP_INIT:
-        # PTB v20+ requires initialize() before process_update()
-        await app.initialize()
+        try:
+            res = app.initialize()
+            # initialize() is awaitable on PTB v20+
+            if hasattr(res, "__await__"):
+                await res
+        except Exception:
+            # Some versions may already be initialized / different semantics
+            pass
         _TG_APP_INIT = True
+
     return app
+
