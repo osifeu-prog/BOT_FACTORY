@@ -1,4 +1,7 @@
-﻿import os
+import os, logging
+logger = logging.getLogger(__name__)
+logger.warning("BOOT_MARKER: BOT_FACTORY main.py loaded - BUILD_ID=%s", os.getenv("BUILD_ID"))
+import os
 import logging
 logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
