@@ -13,11 +13,11 @@ from app.database import Base
 
 class User(Base):
     """
-    ×ک×‘×œ×ھ ×‍×©×ھ×‍×©×™×‌ â€“ ×‍×•×ھ×گ×‌ ×œ×،×›×™×‍×” ×”×§×™×™×‍×ھ ×‘×¤×•×،×ک×’×¨×،.
+    أ—ع©أ—â€کأ—إ“أ—ع¾ أ—â€چأ—آ©أ—ع¾أ—â€چأ—آ©أ—â„¢أ—â€Œ أ¢â‚¬â€œ أ—â€چأ—â€¢أ—ع¾أ—ع¯أ—â€Œ أ—إ“أ—طŒأ—â€؛أ—â„¢أ—â€چأ—â€‌ أ—â€‌أ—آ§أ—â„¢أ—â„¢أ—â€چأ—ع¾ أ—â€کأ—آ¤أ—â€¢أ—طŒأ—ع©أ—â€™أ—آ¨أ—طŒ.
 
-    ×—×©×•×‘:
-    - ×گ×™×ں ×¢×‍×•×“×” id.
-    - telegram_id ×”×•×گ ×”-Primary Key.
+    أ—â€”أ—آ©أ—â€¢أ—â€ک:
+    - أ—ع¯أ—â„¢أ—ع؛ أ—آ¢أ—â€چأ—â€¢أ—â€œأ—â€‌ id.
+    - telegram_id أ—â€‌أ—â€¢أ—ع¯ أ—â€‌-Primary Key.
     """
 
     __tablename__ = "users"
@@ -30,7 +30,7 @@ class User(Base):
 
 class Transaction(Base):
     """
-    ×ک×‘×œ×ھ ×ک×¨× ×–×§×¦×™×•×ھ ×¤× ×™×‍×™×•×ھ (Off-Chain Ledger).
+    أ—ع©أ—â€کأ—إ“أ—ع¾ أ—ع©أ—آ¨أ—آ أ—â€“أ—آ§أ—آ¦أ—â„¢أ—â€¢أ—ع¾ أ—آ¤أ—آ أ—â„¢أ—â€چأ—â„¢أ—â€¢أ—ع¾ (Off-Chain Ledger).
     """
 
     __tablename__ = "transactions"
@@ -38,7 +38,7 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # ×‍×–×”×™ ×ک×œ×’×¨×‌ (×œ×گ FK ×¤×•×¨×‍×œ×™, ×¤×©×•×ک ×©×‍×™×¨×” ×©×œ ×”-ID)
+    # أ—â€چأ—â€“أ—â€‌أ—â„¢ أ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ (أ—إ“أ—ع¯ FK أ—آ¤أ—â€¢أ—آ¨أ—â€چأ—إ“أ—â„¢, أ—آ¤أ—آ©أ—â€¢أ—ع© أ—آ©أ—â€چأ—â„¢أ—آ¨أ—â€‌ أ—آ©أ—إ“ أ—â€‌-ID)
     from_user = Column(BigInteger, nullable=True)
     to_user = Column(BigInteger, nullable=True)
 

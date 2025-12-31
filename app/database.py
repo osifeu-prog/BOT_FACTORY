@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Base MUST exist here because models import it: rom app.database import Base
+# Base MUST exist here because models import it: rom app.database import Base
 Base = declarative_base()
 
 
