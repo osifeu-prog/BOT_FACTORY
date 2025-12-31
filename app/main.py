@@ -1,3 +1,6 @@
+from telegram import Bot
+import traceback
+import sys
 from __future__ import annotations
 
 from starlette.responses import PlainTextResponse
@@ -160,3 +163,22 @@ async def telegram_webhook(request: Request) -> JSONResponse:
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt():
     return "User-agent: *\nDisallow: /\n"
+
+
+@app.post("/webhook/telegram")
+async def telegram_webhook(request: Request):
+    try:
+        update_dict = await request.json()
+    except Exception:
+        return {"ok": False, "error": "invalid_json"}
+
+    try:
+        from app.bot.investor_wallet_bot import process_webhook as _process_webhook  # lazy import
+        await _process_webhook(update_dict)
+    except Exception as e:
+        print(f"process_webhook: {e}", file=sys.stderr)
+        traceback.print_exc()
+        # return ok so Telegram doesn't retry storm; keep error for logs
+        return {"ok": True, "error": "process_webhook_failed"}
+
+    return {"ok": True}
