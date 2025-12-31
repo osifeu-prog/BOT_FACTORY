@@ -1,29 +1,17 @@
-import traceback
-import sys
 from __future__ import annotations
 
-from starlette.responses import PlainTextResponse
-
 import os
-import logging
-import inspect
+import sys
+import traceback
 import asyncio
-
-from starlette.responses import PlainTextResponse
 from typing import Any
 
-from starlette.responses import PlainTextResponse
-
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, PlainTextResponse
+from starlette.responses import PlainTextResponse, JSONResponse
 
-from starlette.responses import PlainTextResponse
-
-log = logging.getLogger("bot_factory")
-
-# -------------------------
-# ENV helpers (empty => None)
-# -------------------------
+# -----------------------
+# Helpers (safe env)
+# -----------------------
 def env_str(name: str) -> str | None:
     v = os.getenv(name)
     if v is None:
@@ -31,153 +19,86 @@ def env_str(name: str) -> str | None:
     v = v.strip()
     return v if v else None
 
-def env_bool(name: str, default: bool = False) -> bool:
-    v = env_str(name)
-    if v is None:
-        return default
-    return v.lower() in ("1", "true", "yes", "y", "on")
+def _client_ip(request: Request) -> str:
+    # Minimal. If behind CF/proxy and you later want trust logic, add it here.
+    xf = request.headers.get("x-forwarded-for")
+    if xf:
+        return xf.split(",")[0].strip()
+    return request.client.host if request.client else "0.0.0.0"
 
-def env_csv(name: str) -> list[str] | None:
-    v = env_str(name)
-    if v is None:
-        return None
-    parts = [p.strip() for p in v.split(",")]
-    parts = [p for p in parts if p]
-    return parts if parts else None
+# -----------------------
+# App
+# -----------------------
+app = FastAPI()
 
-BUILD_ID = env_str("BUILD_ID")
-PUBLIC_BASE_URL = env_str("PUBLIC_BASE_URL")  # optional
-DOCS_RATE_LIMIT = env_str("DOCS_RATE_LIMIT")  # optional, handled later if you add middleware
-
-# Security-related optional envs (can be empty in Railway => treated as None/False)
-ADMIN_API_KEY = env_str("ADMIN_API_KEY")  # recommended
-ADMIN_ALLOW_IPS = env_csv("ADMIN_ALLOW_IPS")  # optional
-TRUST_CLOUDFLARE = env_bool("TRUST_CLOUDFLARE", default=False)  # optional
-CF_IP_ALLOW = env_csv("CF_IP_ALLOW")  # optional
-
-# -------------------------
-# App: define FIRST, with health endpoint that never imports DB/Telegram
-# -------------------------
-app = FastAPI(
-    title="BOT_FACTORY",
-    version=BUILD_ID or "dev",
-)
-
-
-@app.get("/health")
-def health() -> dict[str, Any]:
-    # Must never touch DB/Telegram. Only return cheap info.
-    return {
-        "ok": True,
-        "build_id": BUILD_ID,
-        "has_bot_token": bool(env_str("BOT_TOKEN")),
-        "has_database_url": bool(env_str("DATABASE_URL")),
-    }
-
-# -------------------------
-# Lazy-init state (never block startup)
-# -------------------------
-_BOOT = {
-    "bot_initialized": False,
-    "db_ready": False,
-    "errors": [],
-}
-
-def _record_error(where: str, e: Exception) -> None:
-    msg = f"{where}: {type(e).__name__}: {e}"
-    _BOOT["errors"].append(msg)
-    log.exception(msg)
-
-@app.get("/status")
-def status() -> dict[str, Any]:
-    # Optional debug endpoint (safe). You can protect later.
-    return dict(_BOOT)
-
-@app.on_event("startup")
-def _startup_best_effort() -> None:
-    """
-    Best-effort init only.
-    Never crash startup because Railway healthcheck must pass even when env/DB is missing.
-    """
-    # 1) DB bootstrap (optional)
-    try:
-        dburl = env_str("DATABASE_URL")
-        if dburl:
-            from app.core.telegram_updates import ensure_telegram_updates_table  # lazy import
-            ensure_telegram_updates_table()
-            _BOOT["db_ready"] = True
-    except Exception as e:
-        _record_error("db_init", e)
-
-    # 2) Telegram bot init (optional)
-    try:
-        token = env_str("BOT_TOKEN")
-        if token:
-            try:
-                from app.bot.investor_wallet_bot import initialize_bot as _init_bot  # lazy import
-                _res = _init_bot()
-                if inspect.isawaitable(_res):
-                    asyncio.create_task(_res)
-            except Exception as e:
-                import traceback, sys
-                print(f"bot_init: {e}", file=sys.stderr)
-                traceback.print_exc()
-            _BOOT["bot_initialized"] = True
-    except Exception as e:
-        _record_error("bot_init", e)
-
-@app.post("/webhook/telegram")
-async def telegram_webhook(request: Request) -> JSONResponse:
-    """
-    Webhook must never crash the app.
-    If bot isn't configured/initialized, return 200 to avoid Telegram retry storms,
-    but include ok=false in body + log.
-    """
-    try:
-        update_dict = await request.json()
-    except Exception as e:
-        _record_error("webhook_parse_json", e)
-        return JSONResponse({"ok": False, "error": "invalid_json"}, status_code=200)
-
-    # Optional dedupe: best-effort only (never crash)
-    try:
-        from app.core.telegram_updates import register_update_once  # lazy import
-        if not register_update_once(update_dict):
-            return JSONResponse({"ok": True, "deduped": True}, status_code=200)
-    except Exception as e:
-        _record_error("dedupe", e)
-
-    # If bot token missing or bot not initialized, do not crash.
-    if not env_str("BOT_TOKEN"):
-        return JSONResponse({"ok": False, "reason": "BOT_TOKEN_missing"}, status_code=200)
-
-    try:
-        await process_webhook(update_dict)
-        return JSONResponse({"ok": True}, status_code=200)
-    except Exception as e:
-        _record_error("process_webhook", e)
-        # Still return 200 to avoid Telegram storm; log already captured
-        return JSONResponse({"ok": False, "reason": "process_failed"}, status_code=200)
-
+# -----------------------
+# Noise reducers
+# -----------------------
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt():
     return "User-agent: *\nDisallow: /\n"
 
+# -----------------------
+# Health / Status (never depends on DB/Telegram)
+# -----------------------
+@app.get("/health")
+async def health():
+    # Don't touch DB/Telegram here. Just confirm process is alive.
+    return {"ok": True}
 
+@app.get("/status")
+async def status():
+    # Light visibility only; still no hard deps.
+    # If you want later: expose bot/db readiness flags here.
+    return {
+        "ok": True,
+        "bot_token_present": bool(env_str("BOT_TOKEN")),
+        "database_url_present": bool(env_str("DATABASE_URL")),
+    }
+
+# -----------------------
+# Debug Telegram (LAZY import)
+# -----------------------
+@app.get("/debug/telegram")
+async def debug_telegram():
+    token_present = bool(env_str("BOT_TOKEN"))
+    info = None
+    err = None
+
+    if token_present:
+        try:
+            # Lazy import - must never break startup if telegram libs mismatch
+            from telegram import Bot  # type: ignore
+            b = Bot(token=env_str("BOT_TOKEN"))
+            # run blocking call in a thread
+            info = await asyncio.to_thread(b.get_webhook_info)
+        except Exception as e:
+            err = str(e)
+
+    return {
+        "bot_token_present": token_present,
+        "webhook_info": (info.to_dict() if info else None),
+        "error": err,
+    }
+
+# -----------------------
+# Telegram Webhook (LAZY import per-request)
+# -----------------------
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
     try:
-        update_dict = await request.json()
+        update_dict: Any = await request.json()
     except Exception:
-        return {"ok": False, "error": "invalid_json"}
+        return JSONResponse({"ok": False, "error": "invalid_json"}, status_code=400)
 
     try:
-        from app.bot.investor_wallet_bot import process_webhook as _process_webhook  # lazy import
-        await _process_webhook(update_dict)
+        # LAZY import so a broken bot file doesn't kill the server
+        from app.bot.investor_wallet_bot import process_webhook  # type: ignore
+        await process_webhook(update_dict)
     except Exception as e:
+        # Never crash server; return ok to avoid Telegram retry storm, log for debugging
         print(f"process_webhook: {e}", file=sys.stderr)
         traceback.print_exc()
-        # return ok so Telegram doesn't retry storm; keep error for logs
-        return {"ok": True, "error": "process_webhook_failed"}
+        return JSONResponse({"ok": True, "error": "process_webhook_failed"}, status_code=200)
 
     return {"ok": True}
