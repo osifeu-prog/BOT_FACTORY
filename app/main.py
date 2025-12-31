@@ -1,175 +1,141 @@
-import os, logging
-logger = logging.getLogger(__name__)
-logger.warning("BOOT_MARKER: BOT_FACTORY main.py loaded - BUILD_ID=%s", os.getenv("BUILD_ID"))
+from __future__ import annotations
+
 import os
 import logging
-logger = logging.getLogger(__name__)
-from datetime import datetime, timezone
-from typing import Any, Dict, Tuple
+from typing import Any
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.database import init_db
-from app.core.telegram_updates import ensure_telegram_updates_table, register_update_once
-from app.core.ledger import ensure_ledger_tables
-from app.bot.investor_wallet_bot import initialize_bot, process_webhook
-from app.monitoring import run_selftest
+log = logging.getLogger("bot_factory")
 
-BUILD_ID = os.getenv("BUILD_ID", "local-dev")
-log = logging.getLogger("slhnet")
-from app.routers.investments import router as invest_router
-
-app = FastAPI(title="SLH Investor Gateway")
-
-
-
-
-@app.get("/version")
-def version():
-    return {
-        "railway_git_commit_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA"),
-        "railway_git_branch": os.getenv("RAILWAY_GIT_BRANCH"),
-        "railway_service": os.getenv("RAILWAY_SERVICE_NAME"),
-    }
-
-app.include_router(invest_router)
-def _slh_is_private_update(payload: Dict[str, Any]) -> bool:
-    try:
-        msg = (
-            payload.get("message")
-            or payload.get("edited_message")
-            or payload.get("channel_post")
-            or payload.get("edited_channel_post")
-        )
-        if isinstance(msg, dict):
-            chat = msg.get("chat") or {}
-            return chat.get("type") == "private"
-
-        cb = payload.get("callback_query")
-        if isinstance(cb, dict):
-            m2 = cb.get("message") or {}
-            chat = (m2.get("chat") or {}) if isinstance(m2, dict) else {}
-            return chat.get("type") == "private"
-
-        return True
-    except Exception:
-        return True
-
-
-def _slh_chat_fingerprint(payload: Dict[str, Any]) -> Tuple[str, str]:
-    try:
-        msg = (
-            payload.get("message")
-            or payload.get("edited_message")
-            or payload.get("channel_post")
-            or payload.get("edited_channel_post")
-        )
-        if isinstance(msg, dict):
-            chat = msg.get("chat") or {}
-            return str(chat.get("type") or "?"), str(chat.get("id") or "?")
-
-        cb = payload.get("callback_query")
-        if isinstance(cb, dict):
-            m2 = cb.get("message") or {}
-            chat = (m2.get("chat") or {}) if isinstance(m2, dict) else {}
-            return str(chat.get("type") or "?"), str(chat.get("id") or "?")
-
-        return "?", "?"
-    except Exception:
-        return "?", "?"
-
-
-def _truthy(v: str | None) -> bool:
+# -------------------------
+# ENV helpers (empty => None)
+# -------------------------
+def env_str(name: str) -> str | None:
+    v = os.getenv(name)
     if v is None:
-        return False
-    return v.strip().lower() in {"1", "true", "yes", "y", "on"}
+        return None
+    v = v.strip()
+    return v if v else None
 
+def env_bool(name: str, default: bool = False) -> bool:
+    v = env_str(name)
+    if v is None:
+        return default
+    return v.lower() in ("1", "true", "yes", "y", "on")
 
-def _bot_token_looks_valid(token: str) -> bool:
-    t = (token or "").strip()
-    if len(t) < 35 or ":" not in t:
-        return False
-    left, right = t.split(":", 1)
-    return left.isdigit() and len(right) >= 20
+def env_csv(name: str) -> list[str] | None:
+    v = env_str(name)
+    if v is None:
+        return None
+    parts = [p.strip() for p in v.split(",")]
+    parts = [p for p in parts if p]
+    return parts if parts else None
 
+BUILD_ID = env_str("BUILD_ID")
+PUBLIC_BASE_URL = env_str("PUBLIC_BASE_URL")  # optional
+DOCS_RATE_LIMIT = env_str("DOCS_RATE_LIMIT")  # optional, handled later if you add middleware
 
-@app.on_event("startup")
-async def startup_event():
-    init_db()
-    ensure_telegram_updates_table()
-    dsn = (os.getenv("DATABASE_URL") or "").strip().lower()
-    if dsn.startswith("postgres://") or dsn.startswith("postgresql://") or dsn.startswith("postgres"):
-        ensure_ledger_tables()
-    if _truthy(os.getenv("DISABLE_TELEGRAM_BOT")):
-        log.warning("Telegram bot disabled via DISABLE_TELEGRAM_BOT=1 -> starting API only")
-        return
+# Security-related optional envs (can be empty in Railway => treated as None/False)
+ADMIN_API_KEY = env_str("ADMIN_API_KEY")  # recommended
+ADMIN_ALLOW_IPS = env_csv("ADMIN_ALLOW_IPS")  # optional
+TRUST_CLOUDFLARE = env_bool("TRUST_CLOUDFLARE", default=False)  # optional
+CF_IP_ALLOW = env_csv("CF_IP_ALLOW")  # optional
 
-    bot_token = (os.getenv("BOT_TOKEN") or "").strip()
-    if not bot_token or not _bot_token_looks_valid(bot_token):
-        log.warning("BOT_TOKEN missing/invalid -> starting API only")
-        return
-
-    try:
-        await initialize_bot()
-        log.info("Telegram bot initialized successfully")
-    except Exception:
-        log.exception("Telegram bot initialization failed -> starting API only")
-
-
-@app.get("/")
-async def root():
-    return {"message": "SLH Investor Gateway is running", "build_id": BUILD_ID}
-
+# -------------------------
+# App: define FIRST, with health endpoint that never imports DB/Telegram
+# -------------------------
+app = FastAPI(
+    title="BOT_FACTORY",
+    version=BUILD_ID or "dev",
+)
 
 @app.get("/health")
-async def health():
-    return {"status": "ok", "build_id": BUILD_ID}
-
-
-@app.get("/__whoami")
-async def whoami(request: Request):
-    now = datetime.now(timezone.utc).isoformat()
-    env_keys = [
-        "RAILWAY_ENVIRONMENT",
-        "RAILWAY_PROJECT_ID",
-        "RAILWAY_SERVICE_NAME",
-        "RAILWAY_GIT_REPO_NAME",
-        "RAILWAY_GIT_BRANCH",
-        "RAILWAY_GIT_COMMIT_SHA",
-        "PORT",
-    ]
-    env = {k: os.getenv(k) for k in env_keys if os.getenv(k) is not None}
+def health() -> dict[str, Any]:
+    # Must never touch DB/Telegram. Only return cheap info.
     return {
         "ok": True,
-        "time_utc": now,
         "build_id": BUILD_ID,
-        "env": env,
-        "client": {
-            "ip": request.client.host if request.client else None,
-            "user_agent": request.headers.get("user-agent"),
-        },
+        "has_bot_token": bool(env_str("BOT_TOKEN")),
+        "has_database_url": bool(env_str("DATABASE_URL")),
     }
 
+# -------------------------
+# Lazy-init state (never block startup)
+# -------------------------
+_BOOT = {
+    "bot_initialized": False,
+    "db_ready": False,
+    "errors": [],
+}
 
-@app.get("/ready")
-async def ready():
-    result = run_selftest(quick=True)
-    return {"status": result.get("status"), "checks": result.get("checks")}
+def _record_error(where: str, e: Exception) -> None:
+    msg = f"{where}: {type(e).__name__}: {e}"
+    _BOOT["errors"].append(msg)
+    log.exception(msg)
 
+@app.get("/status")
+def status() -> dict[str, Any]:
+    # Optional debug endpoint (safe). You can protect later.
+    return dict(_BOOT)
 
-@app.get("/selftest")
-async def selftest():
-    return run_selftest(quick=False)
+@app.on_event("startup")
+def _startup_best_effort() -> None:
+    """
+    Best-effort init only.
+    Never crash startup because Railway healthcheck must pass even when env/DB is missing.
+    """
+    # 1) DB bootstrap (optional)
+    try:
+        dburl = env_str("DATABASE_URL")
+        if dburl:
+            from app.core.telegram_updates import ensure_telegram_updates_table  # lazy import
+            ensure_telegram_updates_table()
+            _BOOT["db_ready"] = True
+    except Exception as e:
+        _record_error("db_init", e)
 
+    # 2) Telegram bot init (optional)
+    try:
+        token = env_str("BOT_TOKEN")
+        if token:
+            from app.bot.investor_wallet_bot import initialize_bot  # lazy import
+            initialize_bot()
+            _BOOT["bot_initialized"] = True
+    except Exception as e:
+        _record_error("bot_init", e)
 
 @app.post("/webhook/telegram")
-async def telegram_webhook(request: Request):
-    update_dict = await request.json()
+async def telegram_webhook(request: Request) -> JSONResponse:
+    """
+    Webhook must never crash the app.
+    If bot isn't configured/initialized, return 200 to avoid Telegram retry storms,
+    but include ok=false in body + log.
+    """
     try:
+        update_dict = await request.json()
+    except Exception as e:
+        _record_error("webhook_parse_json", e)
+        return JSONResponse({"ok": False, "error": "invalid_json"}, status_code=200)
+
+    # Optional dedupe: best-effort only (never crash)
+    try:
+        from app.core.telegram_updates import register_update_once  # lazy import
+        if not register_update_once(update_dict):
+            return JSONResponse({"ok": True, "deduped": True}, status_code=200)
+    except Exception as e:
+        _record_error("dedupe", e)
+
+    # If bot token missing or bot not initialized, do not crash.
+    if not env_str("BOT_TOKEN"):
+        return JSONResponse({"ok": False, "reason": "BOT_TOKEN_missing"}, status_code=200)
+
+    try:
+        from app.bot.investor_wallet_bot import process_webhook  # lazy import
         await process_webhook(update_dict)
-    except Exception:
-        logger.exception("telegram webhook processing failed")
-        # أ—â€”أ—آ©أ—â€¢أ—â€ک: أ—â€چأ—â€”أ—â€“أ—â„¢أ—آ¨أ—â„¢أ—â€Œ 200 أ—â€؛أ—â€œأ—â„¢ أ—آ©أ—ع©أ—إ“أ—â€™أ—آ¨أ—â€Œ أ—إ“أ—ع¯ أ—â„¢أ—آ¢أ—آ©أ—â€‌ retry أ—ع¯أ—â„¢أ—آ أ—طŒأ—â€¢أ—آ¤أ—â„¢
-        return {"ok": True}
-    return {"ok": True}
+        return JSONResponse({"ok": True}, status_code=200)
+    except Exception as e:
+        _record_error("process_webhook", e)
+        # Still return 200 to avoid Telegram storm; log already captured
+        return JSONResponse({"ok": False, "reason": "process_failed"}, status_code=200)
