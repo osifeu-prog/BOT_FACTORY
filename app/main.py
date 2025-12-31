@@ -4,6 +4,7 @@ from starlette.responses import PlainTextResponse
 
 import os
 import logging
+import inspect
 
 from starlette.responses import PlainTextResponse
 from typing import Any
@@ -109,7 +110,15 @@ def _startup_best_effort() -> None:
     try:
         token = env_str("BOT_TOKEN")
         if token:
-            initialize_bot()
+            try:
+                from app.bot.investor_wallet_bot import initialize_bot as _init_bot  # lazy import
+                _res = _init_bot()
+                if inspect.isawaitable(_res):
+                    await _res
+            except Exception as e:
+                import traceback, sys
+                print(f"bot_init: {e}", file=sys.stderr)
+                traceback.print_exc()
             _BOOT["bot_initialized"] = True
     except Exception as e:
         _record_error("bot_init", e)
