@@ -102,7 +102,6 @@ def _startup_best_effort() -> None:
     try:
         token = env_str("BOT_TOKEN")
         if token:
-            from app.bot.investor_wallet_bot import initialize_bot  # lazy import
             initialize_bot()
             _BOOT["bot_initialized"] = True
     except Exception as e:
@@ -134,7 +133,6 @@ async def telegram_webhook(request: Request) -> JSONResponse:
         return JSONResponse({"ok": False, "reason": "BOT_TOKEN_missing"}, status_code=200)
 
     try:
-        from app.bot.investor_wallet_bot import process_webhook  # lazy import
         await process_webhook(update_dict)
         return JSONResponse({"ok": True}, status_code=200)
     except Exception as e:
