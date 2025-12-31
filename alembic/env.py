@@ -3,30 +3,26 @@ from __future__ import annotations
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
-# Alembic Config
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Import your SQLAlchemy Base metadata
-# MUST exist: app/database.py defines Base
+# --- IMPORTANT: import Base + all model modules so Base.metadata is complete ---
 from app.database import Base  # noqa: E402
-# Ensure models are imported so Base.metadata includes tables
+import app.models  # noqa: F401
 import app.models_investments  # noqa: F401
 
 target_metadata = Base.metadata
 
 
 def _get_db_url() -> str:
-    # Prefer Railway-style DATABASE_URL
     url = os.getenv("DATABASE_URL") or os.getenv("DATABASE_PUBLIC_URL")
     if not url:
-        # fallback to whatever is in alembic.ini
         url = config.get_main_option("sqlalchemy.url")
-    return url
+    return (url or "").strip().strip('"').strip("'")
 
 
 def run_migrations_offline() -> None:
