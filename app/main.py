@@ -1,4 +1,3 @@
-from telegram import Bot
 import traceback
 import sys
 from __future__ import annotations
