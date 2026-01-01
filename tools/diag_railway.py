@@ -1,11 +1,16 @@
 import os, sys, glob
 
-# ensure imports work even when executed from /app/tools etc.
-if "/app" not in sys.path:
-    sys.path.insert(0, "/app")
 print("PY:", sys.version)
 print("CWD:", os.getcwd())
-print("sys.path[0:3]:", sys.path[0:3])
+print("ENV PYTHONPATH:", os.getenv("PYTHONPATH"))
+print("sys.path[0:5]:", sys.path[:5])
+
+print("\n== Import check (app) ==")
+try:
+    import app
+    print("import app: OK ->", getattr(app, "__file__", "(namespace package)"))
+except Exception as e:
+    print("import app: ERROR ->", repr(e))
 
 print("\n== Alembic import ==")
 try:
@@ -23,18 +28,14 @@ print("migration files:", len(files))
 for f in sorted(files)[-10:]:
     print(" -", f)
 
-print("\n== alembic.ini raw script_location line ==")
+print("\n== alembic.ini script_location (RAW, no interpolation) ==")
 try:
-    with open("alembic.ini","r",encoding="utf-8") as fh:
-        for line in fh:
-            if line.strip().startswith("script_location"):
-                print(line.strip())
+    import configparser
+    cp = configparser.RawConfigParser()  # <— disables %(here)s interpolation entirely
+    cp.read("alembic.ini")
+    print("script_location:", cp.get("alembic", "script_location", fallback=None))
 except Exception as e:
     print("alembic.ini read ERROR:", repr(e))
-
-print("\n== Env vars ==")
-dbu = os.getenv("DATABASE_URL") or os.getenv("DATABASE_PUBLIC_URL")
-print("DATABASE_URL present:", bool(dbu))
 
 print("\n== SQLAlchemy inspect ==")
 try:
