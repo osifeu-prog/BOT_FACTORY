@@ -71,3 +71,6 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
+# After ORM models are imported, merge missing legacy tables into metadata (no collisions)
+app.models_legacy_reflect.reflect_missing_tables_into_base_metadata()
