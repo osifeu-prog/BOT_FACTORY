@@ -16,7 +16,11 @@ if config.config_file_name is not None:
 # ---- App imports ----
 # IMPORTANT: ensure models are imported so metadata contains tables
 from app.database import Base  # noqa: E402
+import app.models_legacy_reflect  # noqa: F401,E402
 import app.models_investments  # noqa: F401,E402
+import app.models  # noqa: F401,E402
+
+import app.models_legacy  # noqa: F401,E402
 
 target_metadata = Base.metadata
 

@@ -21,3 +21,4 @@ tools/.vault/
 tools/railway.vars.txt
 local.db
 
+*.bak.*
