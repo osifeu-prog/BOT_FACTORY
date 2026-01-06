@@ -20,8 +20,6 @@ import app.models_investments  # noqa: F401,E402
 import app.models_legacy_reflect  # noqa: F401,E402
 import app.models  # noqa: F401,E402
 
-import app.models_legacy  # noqa: F401,E402
-
 target_metadata = Base.metadata
 
 
