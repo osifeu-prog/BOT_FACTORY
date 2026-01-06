@@ -1,10 +1,10 @@
 """
 Reflect live DB schema into a separate MetaData and merge ONLY missing tables
-into app.database.Base.metadata. This prevents Alembic autogenerate/check from
-proposing DROPs for legacy tables that exist in DB but don't have ORM models.
+into app.database.Base.metadata.
 
-Important: must run AFTER ORM models are imported, otherwise reflected tables
-may collide with ORM-defined tables (e.g., deposits).
+IMPORTANT:
+- Do NOT run reflection at import-time (it can collide with ORM models like users/deposits).
+- Alembic env.py will call reflect_missing_tables_into_base_metadata() explicitly AFTER importing ORM models.
 """
 
 import os
@@ -15,7 +15,6 @@ from app.database import Base
 def reflect_missing_tables_into_base_metadata() -> None:
     url = (os.getenv("DATABASE_URL") or "").strip()
     if not url:
-        # On Railway, DATABASE_URL should exist. If not, do nothing.
         return
 
     engine = create_engine(url)
@@ -29,7 +28,3 @@ def reflect_missing_tables_into_base_metadata() -> None:
         if name in existing:
             continue
         table.to_metadata(Base.metadata)
-
-
-# Reflect at import-time for Alembic env.py usage
-reflect_missing_tables_into_base_metadata()
