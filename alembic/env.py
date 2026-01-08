@@ -17,6 +17,7 @@ if config.config_file_name is not None:
 # IMPORTANT: ensure models are imported so metadata contains tables
 from app.database import Base  # noqa: E402
 import app.models_investments  # noqa: F401,E402
+import app.models_legacy_reflect as r  # noqa: F401,E402
 import app.models_legacy_reflect  # noqa: F401,E402
 import app.models  # noqa: F401,E402
 
@@ -60,6 +61,9 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # IMPORTANT: load ORM models first
+        import app.models  # noqa: F401
+        import app.models_investments  # noqa: F401
         # Merge legacy tables from live DB into metadata (no collisions)
         r.reflect_missing_tables_into_base_metadata(connection)
 
@@ -78,5 +82,3 @@ if context.is_offline_mode():
 else:
     run_migrations_online()
 
-# After ORM models are imported, merge missing legacy tables into metadata (no collisions)
-app.models_legacy_reflect.reflect_missing_tables_into_base_metadata()
