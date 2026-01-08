@@ -33,7 +33,10 @@ def _get_database_url() -> str:
 
 def run_migrations_offline() -> None:
     url = _get_database_url()
-    context.configure(
+        # Merge legacy tables from live DB into metadata (no collisions)
+        r.reflect_missing_tables_into_base_metadata(connection)
+
+        context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
@@ -57,6 +60,9 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Merge legacy tables from live DB into metadata (no collisions)
+        r.reflect_missing_tables_into_base_metadata(connection)
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
