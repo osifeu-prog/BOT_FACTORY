@@ -64,6 +64,10 @@ def run_migrations_online() -> None:
         # IMPORTANT: load ORM models first
         import app.models  # noqa: F401
         import app.models_investments  # noqa: F401
+
+        # IMPORTANT: load ORM models first
+        import app.models  # noqa: F401
+        import app.models_investments  # noqa: F401
         # Merge legacy tables from live DB into metadata (no collisions)
         r.reflect_missing_tables_into_base_metadata(connection)
 
