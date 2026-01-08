@@ -3,7 +3,7 @@ Reflect live DB schema into a separate MetaData and merge ONLY missing tables
 into Base.metadata.
 
 If a SQLAlchemy Connection is provided (recommended for Alembic),
-use it to ensure same search_path/schema and permissions.
+use it to respect the same search_path/schema and permissions.
 """
 
 import os
