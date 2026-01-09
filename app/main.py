@@ -102,3 +102,38 @@ async def telegram_webhook(request: Request):
         return JSONResponse({"ok": True, "error": "process_webhook_failed"}, status_code=200)
 
     return {"ok": True}
+
+# --- Basic endpoints to reduce 404 noise ---
+try:
+    from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
+except Exception:  # pragma: no cover
+    HTMLResponse = JSONResponse = Response = RedirectResponse = None  # type: ignore
+
+# Root: show a tiny landing (or redirect to /docs if enabled)
+@app.get("/", include_in_schema=False)
+def root():
+    # If Swagger exists, this makes browsing nicer. If /docs is disabled, it still returns a simple page.
+    if RedirectResponse is not None:
+        return RedirectResponse(url="/docs")
+    return {"ok": True}
+
+# Favicon: browsers request it automatically
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    if Response is not None:
+        return Response(status_code=204)
+    return {"ok": True}
+
+# Some scanners/bots hit these; return helpful JSON instead of 404
+@app.get("/getInfo", include_in_schema=False)
+def get_info():
+    if JSONResponse is not None:
+        return JSONResponse({"ok": True, "service": "BOT_FACTORY", "endpoints": ["/health", "/webhook/telegram", "/docs"]})
+    return {"ok": True}
+
+@app.get("/getWebhookInfo", include_in_schema=False)
+def get_webhook_info_hint():
+    # NOTE: Telegram getWebhookInfo is on api.telegram.org; this is just a local hint endpoint.
+    if JSONResponse is not None:
+        return JSONResponse({"ok": True, "hint": "Use Telegram API getWebhookInfo via https://api.telegram.org/bot<TOKEN>/getWebhookInfo"})
+    return {"ok": True}
