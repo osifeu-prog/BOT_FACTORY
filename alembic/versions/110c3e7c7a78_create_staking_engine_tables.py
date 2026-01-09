@@ -1,8 +1,8 @@
 """create_staking_engine_tables
 
-Revision ID: e380503489a3
+Revision ID: 110c3e7c7a78
 Revises: 20260101184108
-Create Date: 2026-01-09 17:05:59.050985
+Create Date: 2026-01-09 19:00:39.734980
 
 """
 from __future__ import annotations
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 
-revision = 'e380503489a3'
+revision = '110c3e7c7a78'
 down_revision = '20260101184108'
 branch_labels = None
 depends_on = None
