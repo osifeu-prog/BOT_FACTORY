@@ -22,3 +22,7 @@ tools/railway.vars.txt
 local.db
 
 *.bak.*
+
+# Private project state (do not commit)
+STATE.md
+

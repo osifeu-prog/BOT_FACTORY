@@ -1,4 +1,4 @@
-﻿import os
+import os
 import psycopg2
 
 dsn = os.environ["DATABASE_URL"]

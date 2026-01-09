@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.routers.staking import router as staking_router
 import os
 import sys
 import traceback
@@ -30,6 +31,7 @@ def _client_ip(request: Request) -> str:
 # App
 # -----------------------
 app = FastAPI()
+app.include_router(staking_router)
 
 # -----------------------
 # Noise reducers
