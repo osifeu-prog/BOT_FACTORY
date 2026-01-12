@@ -30,9 +30,7 @@ def accrue_all(db: Session = Depends(get_db)):
             now=now,
         )
         if reward > 0:
-            results.append(
-                AccrueResult(position_id=r["id"], reward=reward)
-            )
+            results.append(AccrueResult(position_id=r["id"], reward=reward))
 
     return results
 
