@@ -89,6 +89,22 @@ def create_position(body: CreatePositionIn, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# ---- Accrual (admin / internal) ----
+@router.post("/accrue")
+def accrue_all(db: Session = Depends(get_db)):
+    """
+    Accrue rewards for all ACTIVE positions (deterministic).
+    Returns list of {position_id, reward} for rewards > 0.
+    """
+    try:
+        results = service.accrue_all_active_positions(db)
+        db.commit()
+        return results
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/positions", response_model=list[PositionOut])
 def list_positions(telegram_id: int, db: Session = Depends(get_db)):
     positions = (
