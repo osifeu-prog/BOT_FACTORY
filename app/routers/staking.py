@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone
+from sqlalchemy import text
+from app.staking.service import accrue_position
 
 from app.database import get_db
 from app.models_staking import StakingPool, StakingPosition

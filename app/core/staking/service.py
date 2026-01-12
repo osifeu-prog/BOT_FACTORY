@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.core.staking.calculator import calc_reward
 from app.core.staking.state import assert_transition
@@ -367,3 +368,67 @@ def confirm_unstake(
 
     db.flush()
     return {"ok": True, "penalty": str(penalty), "matured": matured}
+def accrue_all_active_positions(db: Session, now: datetime | None = None) -> list[dict]:
+    """
+    Deterministic accrual for all ACTIVE positions.
+    Returns list of {position_id, reward} for rewards > 0.
+    """
+    now = now or datetime.now(timezone.utc)
+
+    rows = db.execute(text("""
+        select p.id, p.user_telegram_id, p.pool_id, p.principal_amount,
+               p.state, p.activated_at, p.last_accrual_at, p.total_reward_accrued,
+               s.apy_bps
+        from staking_positions p
+        join staking_pools s on s.id = p.pool_id
+        where p.state = 'ACTIVE'
+    """)).mappings().all()
+
+    results: list[dict] = []
+
+    for r in rows:
+        # last accrual point
+        last = r["last_accrual_at"] or r["activated_at"]
+        if not last:
+            continue
+
+        elapsed = int((now - last).total_seconds())
+        if elapsed <= 0:
+            continue
+
+        # linear reward
+        rate = float(r["apy_bps"]) / 10_000.0
+        reward = (float(r["principal_amount"]) * rate) * (elapsed / (365.0 * 24.0 * 60.0 * 60.0))
+        if reward <= 0:
+            continue
+
+        # persist
+        db.execute(text("""
+            update staking_positions
+            set last_accrual_at = :now,
+                total_reward_accrued = total_reward_accrued + :reward
+            where id = :id
+        """), {"now": now, "reward": reward, "id": r["id"]})
+
+        db.execute(text("""
+            insert into staking_rewards
+            (id, position_id, reward_type, amount, period_start, period_end)
+            values
+            (gen_random_uuid(), :pid, 'ACCRUAL', :amt, :start, :end)
+        """), {"pid": r["id"], "amt": reward, "start": last, "end": now})
+
+        db.execute(text("""
+            insert into staking_events
+            (id, event_type, user_telegram_id, pool_id, position_id, details)
+            values
+            (gen_random_uuid(), 'ACCRUAL', :uid, :pool, :pid, :details::jsonb)
+        """), {
+            "uid": r["user_telegram_id"],
+            "pool": r["pool_id"],
+            "pid": r["id"],
+            "details": '{"elapsed_seconds": ' + str(elapsed) + ', "apy_bps": ' + str(r["apy_bps"]) + ', "reward": "' + str(reward) + '"}'
+        })
+
+        results.append({"position_id": r["id"], "reward": str(reward)})
+
+    return results
