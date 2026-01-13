@@ -4,25 +4,17 @@ __pycache__/
 # local snapshots
 BOT_FACTORY_SNAPSHOT.txt
 *_SNAPSHOT.txt
-
-
 .venv/
-
-
 .env
-
-
 # local encrypted secrets
 tools/.vault/
-
-
 # local secrets input + vault
-tools/.vault/
 tools/railway.vars.txt
 local.db
-
 *.bak.*
-
 # Private project state (do not commit)
 STATE.md
-
+project_scan_report.txt
+tools/db_check.py
+tools/db_probe.py
+tools/seed_position.py
