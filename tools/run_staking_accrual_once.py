@@ -166,9 +166,9 @@ def main():
                             occurred_at, details
                         ) VALUES (
                             :id, :event_type, :user_telegram_id, :pool_id, :position_id,
-                            :occurred_at, :details::jsonb
+                            :occurred_at, :details
                         )
-                    """),
+                    """).bindparams(bindparam("details", type_=JSONB)),
                     {
                         "id": event_id,
                         "event_type": "REWARD_ACCRUED",
@@ -206,9 +206,9 @@ def main():
                                 occurred_at, details
                             ) VALUES (
                                 :id, :event_type, :user_telegram_id, :pool_id, :position_id,
-                                :occurred_at, :details::jsonb
+                                :occurred_at, :details
                             )
-                        """),
+                        """).bindparams(bindparam("details", type_=JSONB)),
                         {
                             "id": event_id2,
                             "event_type": "POSITION_COMPLETED",
@@ -229,7 +229,15 @@ def main():
 
         finally:
             # ×©×—×¨×•×¨ lock
-            c.execute(text("SELECT pg_advisory_unlock(912345678)"))
+            try:
+        conn.rollback()
+    except Exception:
+        pass
+    try:
+        with engine.connect() as c2:
+            c2.execute(text("SELECT pg_advisory_unlock(912345678)"))
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     main()
