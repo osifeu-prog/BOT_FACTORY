@@ -1,16 +1,38 @@
 import os
 from sqlalchemy import create_engine, text
 
+def q(conn, sql: str):
+    return conn.execute(text(sql)).mappings().all()
+
 def main():
     e = create_engine(os.environ["DATABASE_URL"])
     with e.connect() as c:
-        print("=== POOLS ===")
-        pools = c.execute(text("""
-            SELECT id, name, apy_bps, is_active, start_at, end_at, created_at
+        print("=== staking_pools columns ===")
+        cols = q(c, """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name='staking_pools'
+            ORDER BY ordinal_position
+        """)
+        pool_cols = [r["column_name"] for r in cols]
+        print(pool_cols)
+
+        # pick best candidates
+        starts_col = "starts_at" if "starts_at" in pool_cols else ("start_at" if "start_at" in pool_cols else None)
+        ends_col   = "ends_at"   if "ends_at"   in pool_cols else ("end_at"   if "end_at"   in pool_cols else None)
+
+        select_cols = ["id", "name", "apy_bps", "is_active"]
+        if starts_col: select_cols.append(starts_col)
+        if ends_col:   select_cols.append(ends_col)
+        select_cols.append("created_at")
+
+        print("\n=== POOLS (last 5) ===")
+        pools = q(c, f"""
+            SELECT {", ".join(select_cols)}
             FROM staking_pools
             ORDER BY created_at DESC
             LIMIT 5
-        """)).mappings().all()
+        """)
         for p in pools:
             print(dict(p))
 
@@ -24,13 +46,14 @@ def main():
             print(r)
 
         print("\n=== ACTIVE WITHOUT activated_at ===")
-        rows = c.execute(text("""
+        rows = q(c, """
             SELECT id, user_telegram_id, pool_id, state,
                    created_at, activated_at, last_accrual_at
             FROM staking_positions
             WHERE state='ACTIVE' AND activated_at IS NULL
             ORDER BY created_at DESC
-        """)).mappings().all()
+            LIMIT 50
+        """)
         for r in rows:
             print(dict(r))
 
