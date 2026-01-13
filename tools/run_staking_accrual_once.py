@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_DOWN, getcontext
@@ -176,6 +177,7 @@ def main():
                         "pool_id": pool_id,
                         "position_id": pos_id,
                         "occurred_at": now,
+                        'details': json.dumps(details),
                         "details": (
                             '{"reward_id":"%s","amount":"%s","from":"%s","to":"%s"}'
                             % (reward_id, str(reward), start_ts.isoformat(), end_ts.isoformat())
@@ -216,6 +218,7 @@ def main():
                             "pool_id": pool_id,
                             "position_id": pos_id,
                             "occurred_at": now,
+                            'details': json.dumps(details),
                             "details": '{"reason":"matured"}',
                         },
                     )
