@@ -230,17 +230,6 @@ def main():
             print("inserted_events:", inserted_events)
             print("completed_positions:", completed_positions)
 
-        finally:
-            # ×©×—×¨×•×¨ lock
-            try:
-        conn.rollback()
-    except Exception:
-        pass
-    try:
-        with engine.connect() as c2:
-            c2.execute(text("SELECT pg_advisory_unlock(912345678)"))
-    except Exception:
-        pass
-
+        finally:             # Release advisory lock safely (and clean broken transaction if needed)             try:                 conn.rollback()             except Exception:                 pass             try:                 c.execute(text("SELECT pg_advisory_unlock(912345678)"))             except Exception:                 try:                     with engine.connect() as c2:                         c2.execute(text("SELECT pg_advisory_unlock(912345678)"))                 except Exception:                     pass 
 if __name__ == "__main__":
     main()
