@@ -167,7 +167,7 @@ def main():
                             occurred_at, details
                         ) VALUES (
                             :id, :event_type, :user_telegram_id, :pool_id, :position_id,
-                            :occurred_at, :details
+                            %(occurred_at)s, :details
                         )
                     """).bindparams(bindparam("details", type_=JSONB)),
                     {
@@ -208,7 +208,7 @@ def main():
                                 occurred_at, details
                             ) VALUES (
                                 :id, :event_type, :user_telegram_id, :pool_id, :position_id,
-                                :occurred_at, :details
+                                %(occurred_at)s, :details
                             )
                         """).bindparams(bindparam("details", type_=JSONB)),
                         {
