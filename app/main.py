@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.routers.public_stats import router as public_stats_router
 from app.routers.admin_accrual import router as admin_accrual_router
 
 from app.routers.staking import router as staking_router
@@ -33,6 +34,8 @@ def _client_ip(request: Request) -> str:
 # App
 # -----------------------
 app = FastAPI()
+app.include_router(public_stats_router)
+
 app.include_router(admin_accrual_router)
 app.include_router(staking_router)
 
@@ -171,3 +174,18 @@ async def routes_admin():
             out.append(path)
     out.sort()
     return {"ok": True, "admin_routes": out, "count": len(out)}
+@app.get("/ready")
+def ready():
+    from sqlalchemy import create_engine, text
+    from starlette.responses import JSONResponse
+
+    db = (os.getenv("DATABASE_URL") or "").strip()
+    if not db:
+        return JSONResponse({"ok": False, "ready": False, "reason": "DATABASE_URL_missing"}, status_code=503)
+    try:
+        e = create_engine(db, pool_pre_ping=True)
+        with e.begin() as c:
+            c.execute(text("select 1"))
+        return {"ok": True, "ready": True}
+    except Exception as ex:
+        return JSONResponse({"ok": False, "ready": False, "reason": str(ex)}, status_code=503)

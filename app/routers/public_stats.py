@@ -15,9 +15,8 @@ def utcnow() -> datetime:
 
 
 def pick_db_url() -> str:
-    # Railway uses internal DATABASE_URL
-    url = (os.getenv("DATABASE_URL") or "").strip()
-    return url
+    # Railway: internal DATABASE_URL
+    return (os.getenv("DATABASE_URL") or "").strip()
 
 
 def q1(engine, sql: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
@@ -29,7 +28,7 @@ def q1(engine, sql: str, params: dict[str, Any] | None = None) -> dict[str, Any]
 @router.get("/stats")
 def stats():
     """
-    Public, read-only, safe stats for landing/bot.
+    Public, read-only stats for landing/bot.
     Never returns secrets. If DB missing/unreachable, returns partial info.
     """
     sha = os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_SHA")
@@ -92,6 +91,6 @@ def stats():
         out["staking"] = {**counts, **last, **tvl}
         return out
 
-    except Exception as e:
-        out["db"]["error"] = str(e)
+    except Exception as ex:
+        out["db"]["error"] = str(ex)
         return out
