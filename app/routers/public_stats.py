@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter
 from sqlalchemy import create_engine, text
@@ -15,11 +15,11 @@ def utcnow() -> datetime:
 
 
 def pick_db_url() -> str:
-    # Railway: internal DATABASE_URL
+    # Railway: internal DATABASE_URL (postgres.railway.internal)
     return (os.getenv("DATABASE_URL") or "").strip()
 
 
-def q1(engine, sql: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
+def q1(engine, sql: str, params: Optional[dict[str, Any]] = None) -> Optional[dict[str, Any]]:
     with engine.begin() as c:
         r = c.execute(text(sql), params or {}).mappings().first()
         return dict(r) if r else None
@@ -28,7 +28,7 @@ def q1(engine, sql: str, params: dict[str, Any] | None = None) -> dict[str, Any]
 @router.get("/stats")
 def stats():
     """
-    Public, read-only stats for landing/bot.
+    Public, read-only, safe stats for landing/bot.
     Never returns secrets. If DB missing/unreachable, returns partial info.
     """
     sha = os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_SHA")
