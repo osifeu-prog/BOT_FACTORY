@@ -46,8 +46,8 @@ def run_accrual(x_admin_key: str | None = Header(default=None, alias="X-Admin-Ke
         # local import to avoid impacting app startup
         from tools.run_staking_accrual_once import main as accrual_main  # type: ignore
 
-        accrual_main()
-        return JSONResponse({"ok": True, "ran": True})
+        res = accrual_main()
+        return JSONResponse({"ok": True, "ran": True, "result": res})
     except HTTPException:
         raise
     except Exception as e:
