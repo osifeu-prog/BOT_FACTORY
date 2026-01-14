@@ -1,18 +1,43 @@
-from sqlalchemy.dialects.postgresql import JSONB
+from __future__ import annotations
+
 import os
-import json
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_DOWN, getcontext
 
-from sqlalchemy import create_engine, text, bindparam
+from sqlalchemy import bindparam, create_engine, text
+from sqlalchemy.dialects.postgresql import JSONB
 
 getcontext().prec = 50
 
-SECONDS_PER_YEAR = Decimal("31536000")  # 365 ×™×‍×™×‌
+SECONDS_PER_YEAR = Decimal("31536000")  # 365 days
 
-def utcnow():
+LOCK_ID = 912345678
+
+def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+def quant18(x: Decimal) -> Decimal:
+    return x.quantize(Decimal("0.000000000000000001"), rounding=ROUND_DOWN)
+
+def pick_db_url() -> str:
+    """
+    Prefer DATABASE_URL, but if it's a Railway internal hostname (postgres.railway.internal)
+    and we're running locally, fallback to DATABASE_PUBLIC_URL when available.
+    """
+    url = (os.getenv("DATABASE_URL") or "").strip()
+    pub = (os.getenv("DATABASE_PUBLIC_URL") or "").strip()
+
+    if not url and pub:
+        return pub
+
+    if "railway.internal" in url.lower() and pub:
+        return pub
+
+    if not url:
+        raise SystemExit("DATABASE_URL is not set (and no DATABASE_PUBLIC_URL fallback found).")
+
+    return url
 
 def q1(conn, sql: str, params: dict | None = None):
     return conn.execute(text(sql), params or {}).mappings().first()
@@ -20,24 +45,24 @@ def q1(conn, sql: str, params: dict | None = None):
 def qall(conn, sql: str, params: dict | None = None):
     return conn.execute(text(sql), params or {}).mappings().all()
 
-def quant18(x: Decimal) -> Decimal:
-    return x.quantize(Decimal("0.000000000000000001"), rounding=ROUND_DOWN)
-
 def main():
-    e = create_engine(os.environ["DATABASE_URL"])
+    db_url = pick_db_url()
+    e = create_engine(db_url)
 
     now = utcnow()
 
     with e.begin() as c:
-        # Advisory lock ×›×“×™ ×œ×‍× ×•×¢ ×©×ھ×™ ×¨×™×¦×•×ھ ×‘×‍×§×‘×™×œ
-        locked = q1(c, "SELECT pg_try_advisory_lock(912345678) AS ok")["ok"]
+        locked = q1(c, "SELECT pg_try_advisory_lock(:id) AS ok", {"id": LOCK_ID})["ok"]
         if not locked:
             print("Another accrual is running (advisory lock busy). Exiting.")
             return
 
+        updated_positions = 0
+        inserted_rewards = 0
+        inserted_events = 0
+        completed_positions = 0
+
         try:
-            # × × ×¢×œ ×›×œ ACTIVE ×•× ×¢×‘×•×“ "batch" ×‘×¦×•×¨×” ×‘×ک×•×—×”
-            # join ×œ×¤×•×œ ×›×“×™ ×œ×§×—×ھ apy_bps ×•×’×‌ ends_at (×•×’×‌ starts_at ×گ×‌ ×ھ×¨×¦×” ×‘×”×‍×©×ڑ)
             rows = qall(
                 c,
                 """
@@ -68,11 +93,6 @@ def main():
                 print("No ACTIVE positions found.")
                 return
 
-            updated_positions = 0
-            inserted_rewards = 0
-            inserted_events = 0
-            completed_positions = 0
-
             for r in rows:
                 pos_id = r["position_id"]
                 user_id = r["user_telegram_id"]
@@ -82,13 +102,8 @@ def main():
                 apy_bps = Decimal(str(r["apy_bps"]))
                 apy = apy_bps / Decimal("10000")
 
-                # × ×§×•×“×ھ ×”×ھ×—×œ×” ×œ×گ×§×¨×•×گ×œ
-                start_ts = r["last_accrual_at"] or r["activated_at"]
-                if start_ts is None:
-                    # ×گ×‍×•×¨ ×œ×”×™×•×ھ ×‍×ھ×•×§×ں ×›×‘×¨ ×گ×¦×œ×ڑ, ×گ×‘×œ × ×©×‍×•×¨ ×¢×œ ×—×،×™× ×•×ھ
-                    start_ts = now
+                start_ts = r["last_accrual_at"] or r["activated_at"] or now
 
-                # × ×§×•×“×ھ ×،×™×•×‌ ×œ×گ×§×¨×•×گ×œ: ×œ×گ ×‍×¢×‘×¨ ×œ-matures_at/ends_at ×گ×‌ ×§×™×™×‍×™×‌
                 end_ts = now
                 if r["matures_at"] is not None and r["matures_at"] < end_ts:
                     end_ts = r["matures_at"]
@@ -105,8 +120,8 @@ def main():
                 reward = principal * apy * (delta_seconds / SECONDS_PER_YEAR)
                 reward = quant18(reward)
 
+                # Always advance last_accrual_at
                 if reward <= 0:
-                    # ×¢×“×™×™×ں × ×¢×“×›×ں last_accrual_at ×›×“×™ ×œ×گ "×œ×”×™×ھ×§×¢"
                     c.execute(
                         text("""
                             UPDATE staking_positions
@@ -122,7 +137,6 @@ def main():
                 total_accrued = Decimal(str(r["total_reward_accrued"] or 0))
                 new_total_accrued = total_accrued + reward
 
-                # 1) ×¢×“×›×•×ں ×¤×•×–×™×¦×™×”
                 c.execute(
                     text("""
                         UPDATE staking_positions
@@ -135,7 +149,6 @@ def main():
                 )
                 updated_positions += 1
 
-                # 2) ×©×•×¨×ھ reward
                 reward_id = str(uuid.uuid4())
                 c.execute(
                     text("""
@@ -159,8 +172,14 @@ def main():
                 )
                 inserted_rewards += 1
 
-                # 3) ×گ×™×¨×•×¢
                 event_id = str(uuid.uuid4())
+                details = {
+                    "reward_id": reward_id,
+                    "amount": str(reward),
+                    "from": start_ts.isoformat(),
+                    "to": end_ts.isoformat(),
+                }
+
                 c.execute(
                     text("""
                         INSERT INTO staking_events (
@@ -178,16 +197,11 @@ def main():
                         "pool_id": pool_id,
                         "position_id": pos_id,
                         "occurred_at": now,
-                        'details': (locals().get("details") or {}),
-                        "details": (
-                            '{"reward_id":"%s","amount":"%s","from":"%s","to":"%s"}'
-                            % (reward_id, str(reward), start_ts.isoformat(), end_ts.isoformat())
-                        ),
+                        "details": details,
                     },
                 )
                 inserted_events += 1
 
-                # 4) ×گ×‌ ×”×’×™×¢ maturity â€” × ×،×’×•×¨ ×گ×ھ ×”×¤×•×–×™×¦×™×” (×گ×•×¤×¦×™×•× ×œ×™ ×گ×‘×œ ×‍×•×‍×œ×¥)
                 if r["matures_at"] is not None and now >= r["matures_at"]:
                     c.execute(
                         text("""
@@ -219,8 +233,7 @@ def main():
                             "pool_id": pool_id,
                             "position_id": pos_id,
                             "occurred_at": now,
-                            'details': (locals().get("details") or {}),
-                            "details": '{"reason":"matured"}',
+                            "details": {"reason": "matured"},
                         },
                     )
                     inserted_events += 1
@@ -232,19 +245,11 @@ def main():
             print("completed_positions:", completed_positions)
 
         finally:
-            # Release advisory lock safely (and clean broken transaction if needed)
+            # release lock best-effort
             try:
-                conn.rollback()
+                c.execute(text("SELECT pg_advisory_unlock(:id)"), {"id": LOCK_ID})
             except Exception:
                 pass
-            try:
-                c.execute(text("SELECT pg_advisory_unlock(912345678)"))
-            except Exception:
-                try:
-                    with engine.connect() as c2:
-                        c2.execute(text("SELECT pg_advisory_unlock(912345678)"))
-                except Exception:
-                    pass
 
 if __name__ == "__main__":
     main()
