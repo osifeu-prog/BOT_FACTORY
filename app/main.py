@@ -158,3 +158,16 @@ from app.routers.staking import router as staking_router
 
 
 
+
+
+
+@app.get("/routes/admin")
+async def routes_admin():
+    # helps verify router wiring in production
+    out = []
+    for r in app.routes:
+        path = getattr(r, "path", "")
+        if "/admin" in path:
+            out.append(path)
+    out.sort()
+    return {"ok": True, "admin_routes": out, "count": len(out)}
