@@ -11,14 +11,16 @@ from sqlalchemy.dialects.postgresql import JSONB
 getcontext().prec = 50
 
 SECONDS_PER_YEAR = Decimal("31536000")  # 365 days
-
 LOCK_ID = 912345678
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
+
 def quant18(x: Decimal) -> Decimal:
     return x.quantize(Decimal("0.000000000000000001"), rounding=ROUND_DOWN)
+
 
 def pick_db_url() -> str:
     """
@@ -30,32 +32,42 @@ def pick_db_url() -> str:
 
     if not url and pub:
         return pub
-
     if "railway.internal" in url.lower() and pub:
         return pub
-
     if not url:
         raise SystemExit("DATABASE_URL is not set (and no DATABASE_PUBLIC_URL fallback found).")
-
     return url
+
 
 def q1(conn, sql: str, params: dict | None = None):
     return conn.execute(text(sql), params or {}).mappings().first()
 
+
 def qall(conn, sql: str, params: dict | None = None):
     return conn.execute(text(sql), params or {}).mappings().all()
 
-def main():
+
+def main() -> dict:
     db_url = pick_db_url()
     e = create_engine(db_url)
 
     now = utcnow()
 
     with e.begin() as c:
-        locked = q1(c, "SELECT pg_try_advisory_lock(:id) AS ok", {"id": LOCK_ID})["ok"]
+        locked_row = q1(c, "SELECT pg_try_advisory_lock(:id) AS ok", {"id": LOCK_ID})
+        locked = bool(locked_row["ok"]) if locked_row else False
         if not locked:
+            result = {
+                "ok": False,
+                "skipped": True,
+                "reason": "advisory_lock_busy",
+                "updated_positions": 0,
+                "inserted_rewards": 0,
+                "inserted_events": 0,
+                "completed_positions": 0,
+            }
             print("Another accrual is running (advisory lock busy). Exiting.")
-            return
+            return result
 
         updated_positions = 0
         inserted_rewards = 0
@@ -90,8 +102,17 @@ def main():
             )
 
             if not rows:
+                result = {
+                    "ok": True,
+                    "skipped": True,
+                    "reason": "no_active_positions",
+                    "updated_positions": 0,
+                    "inserted_rewards": 0,
+                    "inserted_events": 0,
+                    "completed_positions": 0,
+                }
                 print("No ACTIVE positions found.")
-                return
+                return result
 
             for r in rows:
                 pos_id = r["position_id"]
@@ -123,12 +144,14 @@ def main():
                 # Always advance last_accrual_at
                 if reward <= 0:
                     c.execute(
-                        text("""
+                        text(
+                            """
                             UPDATE staking_positions
                             SET last_accrual_at = :end_ts,
                                 version = version + 1
                             WHERE id = :pid
-                        """),
+                            """
+                        ),
                         {"end_ts": end_ts, "pid": pos_id},
                     )
                     updated_positions += 1
@@ -138,20 +161,23 @@ def main():
                 new_total_accrued = total_accrued + reward
 
                 c.execute(
-                    text("""
+                    text(
+                        """
                         UPDATE staking_positions
                         SET last_accrual_at = :end_ts,
                             total_reward_accrued = :new_total,
                             version = version + 1
                         WHERE id = :pid
-                    """),
+                        """
+                    ),
                     {"end_ts": end_ts, "new_total": new_total_accrued, "pid": pos_id},
                 )
                 updated_positions += 1
 
                 reward_id = str(uuid.uuid4())
                 c.execute(
-                    text("""
+                    text(
+                        """
                         INSERT INTO staking_rewards (
                             id, position_id, reward_type, amount,
                             period_start, period_end, created_at
@@ -159,7 +185,8 @@ def main():
                             :id, :position_id, :reward_type, :amount,
                             :period_start, :period_end, :created_at
                         )
-                    """),
+                        """
+                    ),
                     {
                         "id": reward_id,
                         "position_id": pos_id,
@@ -181,7 +208,8 @@ def main():
                 }
 
                 c.execute(
-                    text("""
+                    text(
+                        """
                         INSERT INTO staking_events (
                             id, event_type, user_telegram_id, pool_id, position_id,
                             occurred_at, details
@@ -189,7 +217,8 @@ def main():
                             :id, :event_type, :user_telegram_id, :pool_id, :position_id,
                             :occurred_at, :details
                         )
-                    """).bindparams(bindparam("details", type_=JSONB)),
+                        """
+                    ).bindparams(bindparam("details", type_=JSONB)),
                     {
                         "id": event_id,
                         "event_type": "REWARD_ACCRUED",
@@ -202,54 +231,27 @@ def main():
                 )
                 inserted_events += 1
 
-                if r["matures_at"] is not None and now >= r["matures_at"]:
-                    c.execute(
-                        text("""
-                            UPDATE staking_positions
-                            SET state = 'COMPLETED',
-                                closed_at = COALESCE(closed_at, :closed_at),
-                                version = version + 1
-                            WHERE id = :pid AND state = 'ACTIVE'
-                        """),
-                        {"closed_at": now, "pid": pos_id},
-                    )
-                    completed_positions += 1
-
-                    event_id2 = str(uuid.uuid4())
-                    c.execute(
-                        text("""
-                            INSERT INTO staking_events (
-                                id, event_type, user_telegram_id, pool_id, position_id,
-                                occurred_at, details
-                            ) VALUES (
-                                :id, :event_type, :user_telegram_id, :pool_id, :position_id,
-                                :occurred_at, :details
-                            )
-                        """).bindparams(bindparam("details", type_=JSONB)),
-                        {
-                            "id": event_id2,
-                            "event_type": "POSITION_COMPLETED",
-                            "user_telegram_id": user_id,
-                            "pool_id": pool_id,
-                            "position_id": pos_id,
-                            "occurred_at": now,
-                            "details": {"reason": "matured"},
-                        },
-                    )
-                    inserted_events += 1
+            result = {
+                "ok": True,
+                "skipped": False,
+                "updated_positions": updated_positions,
+                "inserted_rewards": inserted_rewards,
+                "inserted_events": inserted_events,
+                "completed_positions": completed_positions,
+            }
 
             print("ACCRUAL DONE")
-            print("updated_positions:", updated_positions)
-            print("inserted_rewards:", inserted_rewards)
-            print("inserted_events:", inserted_events)
-            print("completed_positions:", completed_positions)
+            for k, v in result.items():
+                print(f"{k}: {v}")
+
+            return result
 
         finally:
-            # release lock best-effort
             try:
                 c.execute(text("SELECT pg_advisory_unlock(:id)"), {"id": LOCK_ID})
             except Exception:
                 pass
+
 
 if __name__ == "__main__":
     main()
