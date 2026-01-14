@@ -1,10 +1,11 @@
+from sqlalchemy.dialects.postgresql import JSONB
 import os
 import json
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_DOWN, getcontext
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, bindparam
 
 getcontext().prec = 50
 
@@ -167,7 +168,7 @@ def main():
                             occurred_at, details
                         ) VALUES (
                             :id, :event_type, :user_telegram_id, :pool_id, :position_id,
-                            %(occurred_at)s, :details
+                            :occurred_at, :details
                         )
                     """).bindparams(bindparam("details", type_=JSONB)),
                     {
@@ -177,7 +178,7 @@ def main():
                         "pool_id": pool_id,
                         "position_id": pos_id,
                         "occurred_at": now,
-                        'details': json.dumps(details),
+                        'details': (locals().get("details") or {}),
                         "details": (
                             '{"reward_id":"%s","amount":"%s","from":"%s","to":"%s"}'
                             % (reward_id, str(reward), start_ts.isoformat(), end_ts.isoformat())
@@ -208,7 +209,7 @@ def main():
                                 occurred_at, details
                             ) VALUES (
                                 :id, :event_type, :user_telegram_id, :pool_id, :position_id,
-                                %(occurred_at)s, :details
+                                :occurred_at, :details
                             )
                         """).bindparams(bindparam("details", type_=JSONB)),
                         {
@@ -218,7 +219,7 @@ def main():
                             "pool_id": pool_id,
                             "position_id": pos_id,
                             "occurred_at": now,
-                            'details': json.dumps(details),
+                            'details': (locals().get("details") or {}),
                             "details": '{"reason":"matured"}',
                         },
                     )
