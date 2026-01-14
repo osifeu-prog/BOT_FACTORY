@@ -24,11 +24,25 @@ def quant18(x: Decimal) -> Decimal:
 
 def pick_db_url() -> str:
     """
-    Prefer DATABASE_URL, but if it's a Railway internal hostname (postgres.railway.internal)
-    and we're running locally, fallback to DATABASE_PUBLIC_URL when available.
+    Railway: use DATABASE_URL (postgres.railway.internal)
+    Local:   use DATABASE_PUBLIC_URL (turntable.proxy.rlwy.net)
     """
+    in_railway = bool((os.getenv("RAILWAY_ENVIRONMENT") or "").strip())
     url = (os.getenv("DATABASE_URL") or "").strip()
     pub = (os.getenv("DATABASE_PUBLIC_URL") or "").strip()
+
+    if in_railway:
+        if not url:
+            raise SystemExit("DATABASE_URL missing in Railway.")
+        return url
+
+    # local
+    if pub:
+        return pub
+    if url and "railway.internal" not in url.lower():
+        return url
+    raise SystemExit("No usable DB URL locally (need DATABASE_PUBLIC_URL).")
+
 
     if not url and pub:
         return pub
