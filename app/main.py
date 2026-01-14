@@ -64,6 +64,18 @@ async def status():
 # -----------------------
 # Debug Telegram (LAZY import)
 # -----------------------
+
+
+@app.get("/version")
+async def version():
+    return {
+        "ok": True,
+        "railway_environment": os.getenv("RAILWAY_ENVIRONMENT"),
+        "railway_service": os.getenv("RAILWAY_SERVICE_NAME"),
+        "railway_project": os.getenv("RAILWAY_PROJECT_NAME"),
+        "git_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_SHA"),
+    }
+
 @app.get("/debug/telegram")
 async def debug_telegram():
     token_present = bool(env_str("BOT_TOKEN"))
