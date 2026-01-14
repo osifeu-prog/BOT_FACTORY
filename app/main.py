@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.routers.admin_accrual import router as admin_accrual_router
+
 from app.routers.staking import router as staking_router
 import os
 import sys
@@ -31,6 +33,7 @@ def _client_ip(request: Request) -> str:
 # App
 # -----------------------
 app = FastAPI()
+app.include_router(admin_accrual_router)
 app.include_router(staking_router)
 
 # -----------------------
