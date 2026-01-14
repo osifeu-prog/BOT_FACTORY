@@ -132,12 +132,48 @@ except Exception:  # pragma: no cover
 # Root: show a tiny landing (or redirect to /docs if enabled)
 @app.get("/", include_in_schema=False)
 def root():
-    # If Swagger exists, this makes browsing nicer. If /docs is disabled, it still returns a simple page.
-    if RedirectResponse is not None:
-        return RedirectResponse(url="/docs")
-    return {"ok": True}
+    from fastapi.responses import HTMLResponse
 
-# Favicon: browsers request it automatically
+    html = """<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>BOT_FACTORY</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin:0; padding:24px; background:#0b0f19; color:#e8eefc; }
+    .card { max-width: 980px; margin: 0 auto; border:1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 18px; background: rgba(255,255,255,.04); }
+    a { color:#e8eefc; }
+    .btn { display:inline-block; margin-right:10px; margin-top:10px; padding:10px 14px; border-radius: 12px; text-decoration:none; background:#e8eefc; color:#0b0f19; font-weight:800; }
+    .ghost { background: transparent; border:1px solid rgba(255,255,255,.18); color:#e8eefc; }
+    code { background: rgba(255,255,255,.06); padding:2px 6px; border-radius: 8px; border:1px solid rgba(255,255,255,.12); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 style="margin:0 0 6px 0;">BOT_FACTORY</h1>
+    <div style="opacity:.85">Landing page (no redirect). Live endpoints:</div>
+
+    <div>
+      <a class="btn" href="/docs">API Docs</a>
+      <a class="btn ghost" href="/stats">Stats</a>
+      <a class="btn ghost" href="/ready">Ready</a>
+      <a class="btn ghost" href="/health">Health</a>
+      <a class="btn ghost" href="/version">Build</a>
+    </div>
+
+    <p style="opacity:.75; margin-top:14px;">
+      Tip: <code>GET /</code> returns HTML. We also implement <code>HEAD /</code> so <code>curl -I /</code> returns 200.
+    </p>
+  </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html, status_code=200)
+
+@app.head("/", include_in_schema=False)
+def root_head():
+    from starlette.responses import Response
+    return Response(status_code=200)
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     if Response is not None:
@@ -189,3 +225,10 @@ def ready():
         return {"ok": True, "ready": True}
     except Exception as ex:
         return JSONResponse({"ok": False, "ready": False, "reason": str(ex)}, status_code=503)
+
+
+
+@app.head("/", include_in_schema=False)
+def root_head():
+    from starlette.responses import Response
+    return Response(status_code=200)
