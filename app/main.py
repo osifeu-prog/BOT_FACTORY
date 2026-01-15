@@ -62,6 +62,7 @@ async def status():
 "ok": True,
         "bot_token_present": bool(env_str("BOT_TOKEN")),
         "database_url_present": bool(env_str("DATABASE_URL")),
+        "telegram_webhook_secret_present": bool(env_str("TELEGRAM_WEBHOOK_SECRET")),
     }
 
 # -----------------------
