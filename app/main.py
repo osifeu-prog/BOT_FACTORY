@@ -125,50 +125,129 @@ async def telegram_webhook(request: Request):
 
 # --- Basic endpoints to reduce 404 noise ---
 try:
-    from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
-except Exception:  # pragma: no cover
+    from fastapi.responses import HTMLResponse, JSONResponse, Response, except Exception:  # pragma: no cover
     HTMLResponse = JSONResponse = Response = RedirectResponse = None  # type: ignore
 
 # Root: show a tiny landing (or redirect to /docs if enabled)
 @app.get("/", include_in_schema=False)
 def root():
     from fastapi.responses import HTMLResponse
+    import html as _html
+    import os
 
-    html = """<!doctype html>
+    # Pull stats via internal function (no network, no JS)
+    stats = {}
+    try:
+        from app.routers.public_stats import stats as stats_fn  # type: ignore
+        stats = stats_fn() or {}
+    except Exception as ex:
+        stats = {"ok": False, "error": str(ex), "db": {"connected": False}, "staking": {}}
+
+    db_ok = bool((stats.get("db") or {}).get("connected"))
+    staking = stats.get("staking") or {}
+
+    def g(key: str, default="0"):
+        v = staking.get(key, default)
+        return _html.escape(str(v if v is not None else default))
+
+    tvl = g("tvl_principal", "0")
+    active = g("positions_active", "0")
+    rewards = g("rewards_rows", "0")
+    events = g("events_rows", "0")
+
+    sha = _html.escape(str(stats.get("git_sha") or os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_SHA") or ""))
+    env = _html.escape(str(stats.get("env") or os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_ENVIRONMENT_NAME") or ""))
+    db_txt = "connected" if db_ok else "offline"
+
+    html = f"""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>BOT_FACTORY</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin:0; padding:24px; background:#0b0f19; color:#e8eefc; }
-    .card { max-width: 980px; margin: 0 auto; border:1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 18px; background: rgba(255,255,255,.04); }
-    a { color:#e8eefc; }
-    .btn { display:inline-block; margin-right:10px; margin-top:10px; padding:10px 14px; border-radius: 12px; text-decoration:none; background:#e8eefc; color:#0b0f19; font-weight:800; }
-    .ghost { background: transparent; border:1px solid rgba(255,255,255,.18); color:#e8eefc; }
-    code { background: rgba(255,255,255,.06); padding:2px 6px; border-radius: 8px; border:1px solid rgba(255,255,255,.12); }
+    :root {{
+      --bg:#0b0f19; --fg:#e8eefc; --mut:#a7b0c6;
+      --card: rgba(255,255,255,.05); --bd: rgba(255,255,255,.12);
+    }}
+    body {{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin:0; padding:24px; background:var(--bg); color:var(--fg);
+    }}
+    .wrap {{ max-width: 980px; margin: 0 auto; }}
+    .hero {{
+      border:1px solid var(--bd);
+      border-radius: 16px;
+      padding: 18px;
+      background: var(--card);
+    }}
+    .row {{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; }}
+    .pill {{
+      font-size: 12px; padding: 4px 10px; border-radius: 999px;
+      border:1px solid rgba(255,255,255,.18); color: var(--mut);
+    }}
+    .grid {{
+      display:grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px; margin-top: 14px;
+    }}
+    .card {{
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding: 12px;
+    }}
+    .k {{ opacity:.75; font-size: 12px; }}
+    .v {{ font-size: 20px; font-weight: 900; margin-top: 4px; }}
+    a.btn {{
+      display:inline-block; margin-right:10px; margin-top:10px;
+      padding:10px 14px; border-radius: 12px; text-decoration:none;
+      background:#e8eefc; color:#0b0f19; font-weight:900;
+    }}
+    a.ghost {{
+      background: transparent; color: var(--fg);
+      border:1px solid rgba(255,255,255,.18);
+    }}
+    code {{
+      background: rgba(255,255,255,.06);
+      padding:2px 6px; border-radius: 8px;
+      border:1px solid rgba(255,255,255,.12);
+    }}
+    @media (max-width: 860px) {{ .grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
+    @media (max-width: 520px) {{ .grid {{ grid-template-columns: 1fr; }} }}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1 style="margin:0 0 6px 0;">BOT_FACTORY</h1>
-    <div style="opacity:.85">Landing page (no redirect). Live endpoints:</div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="row">
+        <h1 style="margin:0;">BOT_FACTORY</h1>
+        <div class="pill">DB: {db_txt}  env: {env}  sha: {sha[:7]}</div>
+      </div>
 
-    <div>
-      <a class="btn" href="/docs">API Docs</a>
-      <a class="btn ghost" href="/stats">Stats</a>
-      <a class="btn ghost" href="/ready">Ready</a>
-      <a class="btn ghost" href="/health">Health</a>
-      <a class="btn ghost" href="/version">Build</a>
+      <div class="grid">
+        <div class="card"><div class="k">TVL</div><div class="v">{tvl}</div></div>
+        <div class="card"><div class="k">Active</div><div class="v">{active}</div></div>
+        <div class="card"><div class="k">Rewards Rows</div><div class="v">{rewards}</div></div>
+        <div class="card"><div class="k">Events Rows</div><div class="v">{events}</div></div>
+      </div>
+
+      <div style="margin-top:10px; opacity:.85">
+        <a class="btn" href="/docs">API Docs</a>
+        <a class="btn ghost" href="/stats">Stats</a>
+        <a class="btn ghost" href="/ready">Ready</a>
+        <a class="btn ghost" href="/health">Health</a>
+        <a class="btn ghost" href="/version">Build</a>
+      </div>
+
+      <p style="opacity:.75; margin-top:14px;">
+        Tip: <code>GET /</code> returns HTML and <code>HEAD /</code> returns 200.
+      </p>
     </div>
-
-    <p style="opacity:.75; margin-top:14px;">
-      Tip: <code>GET /</code> returns HTML. We also implement <code>HEAD /</code> so <code>curl -I /</code> returns 200.
-    </p>
   </div>
 </body>
 </html>"""
     return HTMLResponse(content=html, status_code=200)
+
 
 @app.head("/", include_in_schema=False)
 def root_head():
@@ -225,10 +304,3 @@ def ready():
         return {"ok": True, "ready": True}
     except Exception as ex:
         return JSONResponse({"ok": False, "ready": False, "reason": str(ex)}, status_code=503)
-
-
-
-@app.head("/", include_in_schema=False)
-def root_head():
-    from starlette.responses import Response
-    return Response(status_code=200)
