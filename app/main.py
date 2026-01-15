@@ -58,10 +58,8 @@ async def health():
 
 @app.get("/status")
 async def status():
-    # Light visibility only; still no hard deps.
-    # If you want later: expose bot/db readiness flags here.
     return {
-        "ok": True,
+"ok": True,
         "bot_token_present": bool(env_str("BOT_TOKEN")),
         "database_url_present": bool(env_str("DATABASE_URL")),
     }
