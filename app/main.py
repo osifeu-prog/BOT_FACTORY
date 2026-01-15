@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 from app.routers.public_stats import router as public_stats_router
 from app.routers.admin_accrual import router as admin_accrual_router
 
@@ -107,6 +108,12 @@ async def debug_telegram():
 # -----------------------
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
+    # --- Telegram webhook secret validation (optional) ---
+    expected = (os.getenv("TELEGRAM_WEBHOOK_SECRET") or "").strip()
+    if expected:
+        got = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
+        if (not got) or (not hmac.compare_digest(got, expected)):
+            return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
     try:
         update_dict: Any = await request.json()
     except Exception:
