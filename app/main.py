@@ -125,7 +125,7 @@ async def telegram_webhook(request: Request):
 
 # --- Basic endpoints to reduce 404 noise ---
 try:
-    from fastapi.responses import HTMLResponse, JSONResponse, Response, except Exception:  # pragma: no cover
+    from fastapi.responses import HTMLResponse, JSONResponse, Response
     HTMLResponse = JSONResponse = Response = RedirectResponse = None  # type: ignore
 
 # Root: show a tiny landing (or redirect to /docs if enabled)
@@ -304,3 +304,4 @@ def ready():
         return {"ok": True, "ready": True}
     except Exception as ex:
         return JSONResponse({"ok": False, "ready": False, "reason": str(ex)}, status_code=503)
+
