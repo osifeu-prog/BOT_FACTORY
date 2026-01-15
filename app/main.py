@@ -11,6 +11,7 @@ import asyncio
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from starlette.responses import PlainTextResponse, JSONResponse
 
 # -----------------------
@@ -124,11 +125,6 @@ async def telegram_webhook(request: Request):
     return {"ok": True}
 
 # --- Basic endpoints to reduce 404 noise ---
-try:
-    from fastapi.responses import HTMLResponse, JSONResponse, Response
-    HTMLResponse = JSONResponse = Response = RedirectResponse = None  # type: ignore
-
-# Root: show a tiny landing (or redirect to /docs if enabled)
 @app.get("/", include_in_schema=False)
 def root():
     from fastapi.responses import HTMLResponse
@@ -304,4 +300,5 @@ def ready():
         return {"ok": True, "ready": True}
     except Exception as ex:
         return JSONResponse({"ok": False, "ready": False, "reason": str(ex)}, status_code=503)
+
 
