@@ -18,3 +18,7 @@ project_scan_report.txt
 tools/db_check.py
 tools/db_probe.py
 tools/seed_position.py
+
+*.bak
+
+*.bak
