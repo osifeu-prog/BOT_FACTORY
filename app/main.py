@@ -3,6 +3,7 @@ from __future__ import annotations
 import hmac
 from app.routers.public_stats import router as public_stats_router
 from app.routers.admin_accrual import router as admin_accrual_router
+from app.routers.investments import router as investments_router
 
 from app.routers.staking import router as staking_router
 import os
@@ -276,7 +277,6 @@ def get_webhook_info_hint():
         return JSONResponse({"ok": True, "hint": "Use Telegram API getWebhookInfo via https://api.telegram.org/bot<TOKEN>/getWebhookInfo"})
     return {"ok": True}
 from app.routers.staking import router as staking_router
-from app.routers.investments import router as investments_router
 
 
 
