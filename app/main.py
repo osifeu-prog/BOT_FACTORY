@@ -40,6 +40,7 @@ app.include_router(public_stats_router)
 
 app.include_router(admin_accrual_router)
 app.include_router(staking_router)
+app.include_router(investments_router)
 
 # -----------------------
 # Noise reducers
@@ -275,6 +276,7 @@ def get_webhook_info_hint():
         return JSONResponse({"ok": True, "hint": "Use Telegram API getWebhookInfo via https://api.telegram.org/bot<TOKEN>/getWebhookInfo"})
     return {"ok": True}
 from app.routers.staking import router as staking_router
+from app.routers.investments import router as investments_router
 
 
 
