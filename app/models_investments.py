@@ -21,12 +21,15 @@ def _utcnow() -> datetime:
 
 class Deposit(Base):
     __tablename__ = "deposits"
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    # required by router
     user_id: Mapped[int] = mapped_column(Integer, index=True)
 
     amount_ils: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     method: Mapped[str] = mapped_column(String(32), default="bank", nullable=False)
+
+    # used by router (was missing)
     reference: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     status: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)  # pending/confirmed/rejected

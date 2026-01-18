@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -67,6 +67,41 @@ def get_slh_balance(user_id: int, db: Session = Depends(get_db)):
     return {"user_id": user_id, "slh_balance": str(slh_balance(db, user_id))}
 
 
+@router.get("/me/activity")
+def get_activity(
+    user_id: int,
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    q = (
+        select(SLHLedger)
+        .where(SLHLedger.user_id == user_id)
+        .order_by(desc(SLHLedger.id))
+        .limit(limit)
+    )
+    rows = db.execute(q).scalars().all()
+
+    out: List[Dict[str, Any]] = []
+    for r in rows:
+        out.append(
+            {
+                "id": r.id,
+                "ts": r.created_at.isoformat(),
+                "amount_slh": str(r.amount_slh),
+                "reason": r.reason,
+                "ref_type": r.ref_type,
+                "ref_id": r.ref_id,
+            }
+        )
+
+    return {
+        "user_id": user_id,
+        "slh_balance": str(slh_balance(db, user_id)),
+        "items": out,
+        "count": len(out),
+    }
+
+
 @router.post("/redeem/request")
 def create_redeem(req: RedeemRequestIn, db: Session = Depends(get_db)):
     bal = slh_balance(db, req.user_id)
@@ -98,16 +133,24 @@ def admin_confirm_deposit(req: AdminConfirmDepositIn, db: Session = Depends(get_
     d.confirmed_at = datetime.utcnow()
 
     minted = (d.amount_ils * req.slh_per_ils)
-    db.add(SLHLedger(
-        user_id=d.user_id,
-        amount_slh=minted,
-        reason="deposit_reward",
-        ref_type="deposit",
-        ref_id=d.id,
-    ))
+
+    db.add(
+        SLHLedger(
+            user_id=d.user_id,
+            amount_slh=minted,
+            reason="deposit_reward",
+            ref_type="deposit",
+            ref_id=d.id,
+        )
+    )
 
     db.commit()
-    return {"status": "ok", "deposit_id": d.id, "minted_slh": str(minted)}
+    return {
+        "status": "ok",
+        "deposit_id": d.id,
+        "minted_slh": str(minted),
+        "new_balance": str(slh_balance(db, d.user_id)),
+    }
 
 
 @router.post("/admin/redeem/approve")
@@ -123,21 +166,94 @@ def admin_approve_redeem(req: AdminApproveRedeemIn, db: Session = Depends(get_db
         raise HTTPException(status_code=400, detail=f"Insufficient SLH at approval time. balance={bal}")
 
     r.status = "approved"
-    r.decided_at = datetime.utcnow()
     r.decided_by_admin = req.admin_id
+    r.decided_at = datetime.utcnow()
 
-    db.add(SLHLedger(
-        user_id=r.user_id,
-        amount_slh=Decimal("0") - r.slh_amount,
-        reason="redeem",
-        ref_type="redeem",
-        ref_id=r.id,
-    ))
+    db.add(
+        SLHLedger(
+            user_id=r.user_id,
+            amount_slh=Decimal("0") - r.slh_amount,
+            reason="redeem",
+            ref_type="redeem",
+            ref_id=r.id,
+        )
+    )
 
     db.commit()
-    return {"status": "ok", "redeem_id": r.id, "debited_slh": str(r.slh_amount)}
-# redeploy ping 2025-12-30T14:56:35.5334217+02:00
+    return {
+        "status": "ok",
+        "redeem_id": r.id,
+        "debited_slh": str(r.slh_amount),
+        "new_balance": str(slh_balance(db, r.user_id)),
+    }
 
 
-# redeploy ping 2025-12-30T14:57:38.9731007+02:00
+@router.get("/admin/deposits")
+def admin_list_deposits(
+    status: str = Query(default="pending"),
+    user_id: Optional[int] = None,
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    if user_id is None:
+        q = select(Deposit).where(Deposit.status == status).order_by(desc(Deposit.id)).limit(limit)
+    else:
+        q = select(Deposit).where(Deposit.status == status, Deposit.user_id == user_id).order_by(desc(Deposit.id)).limit(limit)
 
+    items = db.execute(q).scalars().all()
+    return {
+        "status": status,
+        "count": len(items),
+        "items": [
+            {
+                "deposit_id": d.id,
+                "user_id": d.user_id,
+                "amount_ils": str(d.amount_ils),
+                "method": d.method,
+                "reference": d.reference,
+                "notes": d.notes,
+                "state": d.status,
+                "created_at": d.created_at.isoformat(),
+                "confirmed_at": (d.confirmed_at.isoformat() if d.confirmed_at else None),
+            }
+            for d in items
+        ],
+    }
+
+
+@router.get("/admin/redeems")
+def admin_list_redeems(
+    status: str = Query(default="requested"),
+    user_id: Optional[int] = None,
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    if user_id is None:
+        q = select(RedemptionRequest).where(RedemptionRequest.status == status).order_by(desc(RedemptionRequest.id)).limit(limit)
+    else:
+        q = (
+            select(RedemptionRequest)
+            .where(RedemptionRequest.status == status, RedemptionRequest.user_id == user_id)
+            .order_by(desc(RedemptionRequest.id))
+            .limit(limit)
+        )
+
+    items = db.execute(q).scalars().all()
+    return {
+        "status": status,
+        "count": len(items),
+        "items": [
+            {
+                "redeem_id": r.id,
+                "user_id": r.user_id,
+                "slh_amount": str(r.slh_amount),
+                "target": r.target,
+                "notes": r.notes,
+                "state": r.status,
+                "created_at": r.created_at.isoformat(),
+                "decided_at": (r.decided_at.isoformat() if r.decided_at else None),
+                "decided_by_admin": r.decided_by_admin,
+            }
+            for r in items
+        ],
+    }
