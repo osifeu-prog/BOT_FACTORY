@@ -81,9 +81,9 @@ def get_activity(
     )
     rows = db.execute(q).scalars().all()
 
-    out: List[Dict[str, Any]] = []
+    items: List[Dict[str, Any]] = []
     for r in rows:
-        out.append(
+        items.append(
             {
                 "id": r.id,
                 "ts": r.created_at.isoformat(),
@@ -97,8 +97,8 @@ def get_activity(
     return {
         "user_id": user_id,
         "slh_balance": str(slh_balance(db, user_id)),
-        "items": out,
-        "count": len(out),
+        "count": len(items),
+        "items": items,
     }
 
 
@@ -145,12 +145,7 @@ def admin_confirm_deposit(req: AdminConfirmDepositIn, db: Session = Depends(get_
     )
 
     db.commit()
-    return {
-        "status": "ok",
-        "deposit_id": d.id,
-        "minted_slh": str(minted),
-        "new_balance": str(slh_balance(db, d.user_id)),
-    }
+    return {"status": "ok", "deposit_id": d.id, "minted_slh": str(minted)}
 
 
 @router.post("/admin/redeem/approve")
@@ -180,12 +175,7 @@ def admin_approve_redeem(req: AdminApproveRedeemIn, db: Session = Depends(get_db
     )
 
     db.commit()
-    return {
-        "status": "ok",
-        "redeem_id": r.id,
-        "debited_slh": str(r.slh_amount),
-        "new_balance": str(slh_balance(db, r.user_id)),
-    }
+    return {"status": "ok", "redeem_id": r.id, "debited_slh": str(r.slh_amount)}
 
 
 @router.get("/admin/deposits")
@@ -213,8 +203,6 @@ def admin_list_deposits(
                 "reference": d.reference,
                 "notes": d.notes,
                 "state": d.status,
-                "created_at": d.created_at.isoformat(),
-                "confirmed_at": (d.confirmed_at.isoformat() if d.confirmed_at else None),
             }
             for d in items
         ],
