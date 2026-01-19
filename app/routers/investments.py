@@ -18,11 +18,15 @@ router = APIRouter(prefix="/invest", tags=["invest"])
 
 def require_admin(x_admin_key: str | None = Header(default=None, alias="X-Admin-Key")) -> None:
     expected = os.getenv("ADMIN_KEY") or os.getenv("X_ADMIN_KEY")
+
+    # normalize whitespace/newlines (common Railway paste issue)
+    expected = (expected or "").strip()
+    provided = (x_admin_key or "").strip()
+
     if not expected:
         raise HTTPException(status_code=500, detail="ADMIN_KEY not configured")
-    if not x_admin_key or x_admin_key != expected:
+    if not provided or provided != expected:
         raise HTTPException(status_code=401, detail="Unauthorized")
-
 
 class DepositRequestIn(BaseModel):
     user_id: int
