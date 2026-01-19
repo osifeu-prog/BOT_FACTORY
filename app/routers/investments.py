@@ -4,7 +4,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import os
+from fastapi import APIRouter, Depends, HTTPException, Query, Header
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
@@ -13,6 +14,14 @@ from app.database import get_db
 from app.models_investments import Deposit, SLHLedger, RedemptionRequest
 
 router = APIRouter(prefix="/invest", tags=["invest"])
+
+
+def require_admin(x_admin_key: str | None = Header(default=None, alias="X-Admin-Key")) -> None:
+    expected = os.getenv("ADMIN_KEY") or os.getenv("X_ADMIN_KEY")
+    if not expected:
+        raise HTTPException(status_code=500, detail="ADMIN_KEY not configured")
+    if not x_admin_key or x_admin_key != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 class DepositRequestIn(BaseModel):
@@ -122,7 +131,7 @@ def create_redeem(req: RedeemRequestIn, db: Session = Depends(get_db)):
 
 
 @router.post("/admin/deposit/confirm")
-def admin_confirm_deposit(req: AdminConfirmDepositIn, db: Session = Depends(get_db)):
+def admin_confirm_deposit(req: AdminConfirmDepositIn, db: Session = Depends(get_db), _admin: None = Depends(require_admin)):
     d = db.get(Deposit, req.deposit_id)
     if not d:
         raise HTTPException(status_code=404, detail="Deposit not found")
@@ -145,11 +154,11 @@ def admin_confirm_deposit(req: AdminConfirmDepositIn, db: Session = Depends(get_
     )
 
     db.commit()
-    return {"status": "ok", "deposit_id": d.id, "minted_slh": str(minted)}
+    return {"status": "ok", "deposit_id": d.id, "minted_slh": str(minted), "new_balance": str(slh_balance(db, d.user_id))}
 
 
 @router.post("/admin/redeem/approve")
-def admin_approve_redeem(req: AdminApproveRedeemIn, db: Session = Depends(get_db)):
+def admin_approve_redeem(req: AdminApproveRedeemIn, db: Session = Depends(get_db), _admin: None = Depends(require_admin)):
     r = db.get(RedemptionRequest, req.redeem_id)
     if not r:
         raise HTTPException(status_code=404, detail="Redeem request not found")
@@ -175,7 +184,7 @@ def admin_approve_redeem(req: AdminApproveRedeemIn, db: Session = Depends(get_db
     )
 
     db.commit()
-    return {"status": "ok", "redeem_id": r.id, "debited_slh": str(r.slh_amount)}
+    return {"status": "ok", "redeem_id": r.id, "debited_slh": str(r.slh_amount), "new_balance": str(slh_balance(db, r.user_id))}
 
 
 @router.get("/admin/deposits")
@@ -184,6 +193,7 @@ def admin_list_deposits(
     user_id: Optional[int] = None,
     limit: int = Query(default=50, ge=1, le=200),
     db: Session = Depends(get_db),
+    _admin: None = Depends(require_admin),
 ):
     if user_id is None:
         q = select(Deposit).where(Deposit.status == status).order_by(desc(Deposit.id)).limit(limit)
@@ -222,6 +232,7 @@ def admin_list_redeems(
     user_id: Optional[int] = None,
     limit: int = Query(default=50, ge=1, le=200),
     db: Session = Depends(get_db),
+    _admin: None = Depends(require_admin),
 ):
     if user_id is None:
         q = (
