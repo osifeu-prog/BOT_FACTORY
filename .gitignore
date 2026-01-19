@@ -22,3 +22,5 @@ tools/seed_position.py
 *.bak
 
 *.bak
+
+.admin_key.local
