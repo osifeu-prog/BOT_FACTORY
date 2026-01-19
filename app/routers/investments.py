@@ -188,7 +188,12 @@ def admin_list_deposits(
     if user_id is None:
         q = select(Deposit).where(Deposit.status == status).order_by(desc(Deposit.id)).limit(limit)
     else:
-        q = select(Deposit).where(Deposit.status == status, Deposit.user_id == user_id).order_by(desc(Deposit.id)).limit(limit)
+        q = (
+            select(Deposit)
+            .where(Deposit.status == status, Deposit.user_id == user_id)
+            .order_by(desc(Deposit.id))
+            .limit(limit)
+        )
 
     items = db.execute(q).scalars().all()
     return {
@@ -203,6 +208,8 @@ def admin_list_deposits(
                 "reference": d.reference,
                 "notes": d.notes,
                 "state": d.status,
+                "created_at": d.created_at.isoformat(),
+                "confirmed_at": (d.confirmed_at.isoformat() if d.confirmed_at else None),
             }
             for d in items
         ],
@@ -217,7 +224,12 @@ def admin_list_redeems(
     db: Session = Depends(get_db),
 ):
     if user_id is None:
-        q = select(RedemptionRequest).where(RedemptionRequest.status == status).order_by(desc(RedemptionRequest.id)).limit(limit)
+        q = (
+            select(RedemptionRequest)
+            .where(RedemptionRequest.status == status)
+            .order_by(desc(RedemptionRequest.id))
+            .limit(limit)
+        )
     else:
         q = (
             select(RedemptionRequest)
