@@ -1,22 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import hmac
 import os
-from typing import Optional
+import sys
+import traceback
+from typing import Any, Optional
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, PlainTextResponse
-
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
-
-LOG_LEVEL = (os.getenv("LOG_LEVEL") or "INFO").upper()
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s %(levelname)s %(name)s | %(message)s",
-)
-logger = logging.getLogger("bot_factory")
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from starlette.responses import JSONResponse, PlainTextResponse, Response
 
 
 def env_str(name: str, default: Optional[str] = None) -> Optional[str]:
@@ -27,29 +20,19 @@ def env_str(name: str, default: Optional[str] = None) -> Optional[str]:
     return v if v else default
 
 
-def env_int(name: str, default: int) -> int:
-    v = env_str(name)
-    if v is None:
-        return default
-    try:
-        return int(v)
-    except Exception:
-        logger.warning("Invalid int for %s=%r, using default=%d", name, v, default)
-        return default
+def _client_ip(request: Request) -> str:
+    xf = request.headers.get("x-forwarded-for")
+    if xf:
+        return xf.split(",")[0].strip()
+    return request.client.host if request.client else "0.0.0.0"
 
 
 app = FastAPI(title="BOT_FACTORY", version="1.0.0")
 
-BOT_TOKEN = env_str("BOT_TOKEN")
-WEBHOOK_URL = env_str("WEBHOOK_URL")  # https://tease-production.up.railway.app
-WEBHOOK_PATH = env_str("WEBHOOK_PATH", "/webhook/telegram")  # match your existing webhook
-WEBHOOK_SECRET = env_str("WEBHOOK_SECRET")  # optional custom secret (query/header)
-BOT_USERNAME = env_str("BOT_USERNAME")  # without @ (optional)
 
-tg_app: Optional[Application] = None
-tg_started = False
-
-
+# -----------------------
+# Health / Ready (PlainText) - never depends on DB/Telegram
+# -----------------------
 @app.get("/health", response_class=PlainTextResponse)
 async def health() -> str:
     return "ok"
@@ -60,130 +43,105 @@ async def ready() -> str:
     return "ok"
 
 
-async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not update.message:
-        return
-    await update.message.reply_text(" BOT_FACTORY online. Use commands in private chat.")
+# -----------------------
+# Status (JSON)
+# -----------------------
+@app.get("/status")
+async def status() -> dict:
+    return {
+        "ok": True,
+        "bot_token_present": bool(env_str("BOT_TOKEN")),
+        "database_url_present": bool(env_str("DATABASE_URL")),
+        "telegram_webhook_secret_present": bool(env_str("TELEGRAM_WEBHOOK_SECRET")),
+        "railway_environment": os.getenv("RAILWAY_ENVIRONMENT"),
+        "railway_service": os.getenv("RAILWAY_SERVICE_NAME"),
+        "railway_project": os.getenv("RAILWAY_PROJECT_NAME"),
+        "git_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_SHA"),
+    }
 
 
-async def cmd_ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not update.message:
-        return
-    await update.message.reply_text("pong")
+# -----------------------
+# Debug Telegram (lazy)
+# -----------------------
+@app.get("/debug/telegram")
+async def debug_telegram() -> dict:
+    token_present = bool(env_str("BOT_TOKEN"))
+    info = None
+    err = None
+
+    if token_present:
+        try:
+            from telegram import Bot  # type: ignore
+
+            token = env_str("BOT_TOKEN")
+            b = Bot(token=token)  # type: ignore[arg-type]
+            info = await asyncio.to_thread(b.get_webhook_info)
+        except Exception as e:
+            err = str(e)
+
+    return {
+        "ok": True,
+        "bot_token_present": token_present,
+        "webhook_info": (info.to_dict() if info else None),
+        "error": err,
+    }
 
 
-def _is_direct_message(update: Update) -> bool:
-    msg = update.effective_message
-    chat = update.effective_chat
-    if not msg or not chat:
-        return False
-
-    if chat.type == "private":
-        return True
-
-    # group/supergroup: allow only reply-to-bot or mention
-    if msg.reply_to_message and msg.reply_to_message.from_user and msg.reply_to_message.from_user.is_bot:
-        return True
-
-    if BOT_USERNAME:
-        text = (msg.text or msg.caption or "")
-        if f"@{BOT_USERNAME.lstrip('@')}" in text:
-            return True
-
-    return False
-
-
-@app.post(WEBHOOK_PATH)
-async def telegram_webhook(request: Request) -> JSONResponse:
-    if tg_app is None:
-        raise HTTPException(status_code=503, detail="Telegram app not initialized")
-
-    # optional secret
-    if WEBHOOK_SECRET:
-        q_secret = request.query_params.get("secret")
-        h_secret = request.headers.get("X-Webhook-Secret")
-        if (q_secret != WEBHOOK_SECRET) and (h_secret != WEBHOOK_SECRET):
-            raise HTTPException(status_code=401, detail="Invalid webhook secret")
+# -----------------------
+# Telegram Webhook (lazy import per-request)
+# -----------------------
+@app.post("/webhook/telegram")
+async def telegram_webhook(request: Request):
+    # Optional Telegram secret-token header validation
+    expected = (os.getenv("TELEGRAM_WEBHOOK_SECRET") or "").strip()
+    if expected:
+        got = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
+        if (not got) or (not hmac.compare_digest(got, expected)):
+            return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
 
     try:
-        payload = await request.json()
+        update_dict: Any = await request.json()
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
+        return JSONResponse({"ok": False, "error": "invalid_json"}, status_code=400)
 
     try:
-        update = Update.de_json(payload, tg_app.bot)  # type: ignore[arg-type]
+        # Change this import to your real bot entry if needed:
+        # from app.bot.investor_wallet_bot import process_webhook
+        from app.bot.investor_wallet_bot import process_webhook  # type: ignore
+        await process_webhook(update_dict)
     except Exception as e:
-        logger.exception("Failed to parse update: %s", e)
-        raise HTTPException(status_code=400, detail="Bad update payload")
+        # Never crash server; return ok to avoid Telegram retry storm
+        print(f"process_webhook failed: {e}", file=sys.stderr)
+        traceback.print_exc()
+        return JSONResponse({"ok": True, "error": "process_webhook_failed"}, status_code=200)
 
-    if not _is_direct_message(update):
-        return JSONResponse({"ok": True, "ignored": True})
-
-    try:
-        await tg_app.process_update(update)
-    except Exception as e:
-        logger.exception("process_update failed: %s", e)
-        return JSONResponse({"ok": False, "error": str(e)})
-
-    return JSONResponse({"ok": True})
+    return {"ok": True}
 
 
-async def _init_telegram() -> None:
-    global tg_app, tg_started
-
-    if tg_started:
-        return
-    tg_started = True
-
-    if not BOT_TOKEN:
-        logger.warning("BOT_TOKEN not set -> API-only mode")
-        tg_app = None
-        return
-
-    try:
-        tg_app = Application.builder().token(BOT_TOKEN).build()
-        tg_app.add_handler(CommandHandler("start", cmd_start))
-        tg_app.add_handler(CommandHandler("ping", cmd_ping))
-
-        await tg_app.initialize()
-        await tg_app.start()
-
-        if WEBHOOK_URL:
-            webhook_full = WEBHOOK_URL.rstrip("/") + WEBHOOK_PATH
-            if WEBHOOK_SECRET:
-                webhook_full += f"?secret={WEBHOOK_SECRET}"
-            await tg_app.bot.set_webhook(url=webhook_full, drop_pending_updates=True)
-            logger.info("Webhook set: %s", webhook_full)
-
-    except Exception as e:
-        # Never crash FastAPI startup because Telegram failed
-        logger.exception("Telegram init failed: %s", e)
-        tg_app = None
-        return
+# -----------------------
+# Noise reducers
+# -----------------------
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt() -> str:
+    return "User-agent: *\nDisallow: /\n"
 
 
-@app.on_event("startup")
-async def on_startup() -> None:
-    asyncio.create_task(_init_telegram())
+# -----------------------
+# Simple root (no 404 noise)
+# -----------------------
+@app.get("/", include_in_schema=False)
+def root():
+    return HTMLResponse(
+        "<h2>BOT_FACTORY</h2><ul>"
+        "<li><a href='/docs'>/docs</a></li>"
+        "<li><a href='/health'>/health</a></li>"
+        "<li><a href='/ready'>/ready</a></li>"
+        "<li><a href='/status'>/status</a></li>"
+        "<li><a href='/debug/telegram'>/debug/telegram</a></li>"
+        "</ul>"
+    )
 
 
-@app.on_event("shutdown")
-async def on_shutdown() -> None:
-    global tg_app
-    if tg_app is None:
-        return
-    try:
-        # stop/shutdown only if it was started successfully
-        await tg_app.stop()
-    except Exception:
-        pass
-    try:
-        await tg_app.shutdown()
-    except Exception:
-        pass
-
-if __name__ == "__main__":
-    import uvicorn
-
-    port = env_int("PORT", 8080)
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, log_level=LOG_LEVEL.lower())
+@app.head("/", include_in_schema=False)
+def root_head():
+    return Response(status_code=200)
