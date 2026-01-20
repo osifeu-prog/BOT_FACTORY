@@ -108,11 +108,10 @@ async def debug_webhook(request: Request) -> dict:
 
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
-    expected = env_str("TELEGRAM_WEBHOOK_SECRET")
+    expected = (env_str("TELEGRAM_WEBHOOK_SECRET") or "").strip()
     if expected:
         got = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
         if not hmac.compare_digest(got, expected):
-            # Intentionally 401 so we see it clearly in logs during setup
             return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
 
     try:
@@ -124,13 +123,11 @@ async def telegram_webhook(request: Request):
         from app.bot.investor_wallet_bot import process_webhook  # type: ignore
         await process_webhook(update_dict)
     except Exception as e:
-        # Return 200 to prevent Telegram retry storms, but log everything
         print(f"process_webhook failed: {type(e).__name__}: {e}", file=sys.stderr)
         traceback.print_exc()
         return JSONResponse({"ok": True, "error": "process_webhook_failed"}, status_code=200)
 
     return {"ok": True}
-
 @app.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 async def robots_txt() -> str:
     return "User-agent: *\nDisallow: /\n"
