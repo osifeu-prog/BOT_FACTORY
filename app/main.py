@@ -140,23 +140,26 @@ async def _init_telegram() -> None:
         tg_app = None
         return
 
-    tg_app = Application.builder().token(BOT_TOKEN).build()
-    tg_app.add_handler(CommandHandler("start", cmd_start))
-    tg_app.add_handler(CommandHandler("ping", cmd_ping))
+    try:
+        tg_app = Application.builder().token(BOT_TOKEN).build()
+        tg_app.add_handler(CommandHandler("start", cmd_start))
+        tg_app.add_handler(CommandHandler("ping", cmd_ping))
 
-    await tg_app.initialize()
-    await tg_app.start()
+        await tg_app.initialize()
+        await tg_app.start()
 
-    if WEBHOOK_URL:
-        webhook_full = WEBHOOK_URL.rstrip("/") + WEBHOOK_PATH
-        if WEBHOOK_SECRET:
-            webhook_full += f"?secret={WEBHOOK_SECRET}"
-
-        try:
+        if WEBHOOK_URL:
+            webhook_full = WEBHOOK_URL.rstrip("/") + WEBHOOK_PATH
+            if WEBHOOK_SECRET:
+                webhook_full += f"?secret={WEBHOOK_SECRET}"
             await tg_app.bot.set_webhook(url=webhook_full, drop_pending_updates=True)
             logger.info("Webhook set: %s", webhook_full)
-        except Exception as e:
-            logger.exception("Failed setting webhook: %s", e)
+
+    except Exception as e:
+        # Never crash FastAPI startup because Telegram failed
+        logger.exception("Telegram init failed: %s", e)
+        tg_app = None
+        return
 
 
 @app.on_event("startup")
@@ -170,11 +173,14 @@ async def on_shutdown() -> None:
     if tg_app is None:
         return
     try:
+        # stop/shutdown only if it was started successfully
         await tg_app.stop()
+    except Exception:
+        pass
+    try:
         await tg_app.shutdown()
     except Exception:
-        logger.exception("Error during Telegram shutdown")
-
+        pass
 
 if __name__ == "__main__":
     import uvicorn
