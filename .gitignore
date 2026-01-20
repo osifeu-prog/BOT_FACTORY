@@ -24,3 +24,6 @@ tools/seed_position.py
 *.bak
 
 .admin_key.local
+rv.json
+start.py
+Main.py
