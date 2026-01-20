@@ -58,7 +58,7 @@ async def debug_telegram() -> dict:
             from telegram import Bot  # type: ignore
             token = env_str("BOT_TOKEN")
             b = Bot(token=token)  # type: ignore[arg-type]
-            info = await asyncio.to_thread(b.get_webhook_info)
+            info = await b.get_webhook_info()
         except Exception as e:
             err = str(e)
 
@@ -68,7 +68,6 @@ async def debug_telegram() -> dict:
         "webhook_info": (info.to_dict() if info else None),
         "error": err,
     }
-
 
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
