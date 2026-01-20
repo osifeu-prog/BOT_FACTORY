@@ -20,19 +20,9 @@ def env_str(name: str, default: Optional[str] = None) -> Optional[str]:
     return v if v else default
 
 
-def _client_ip(request: Request) -> str:
-    xf = request.headers.get("x-forwarded-for")
-    if xf:
-        return xf.split(",")[0].strip()
-    return request.client.host if request.client else "0.0.0.0"
-
-
 app = FastAPI(title="BOT_FACTORY", version="1.0.0")
 
 
-# -----------------------
-# Health / Ready (PlainText) - never depends on DB/Telegram
-# -----------------------
 @app.get("/health", response_class=PlainTextResponse)
 async def health() -> str:
     return "ok"
@@ -43,9 +33,6 @@ async def ready() -> str:
     return "ok"
 
 
-# -----------------------
-# Status (JSON)
-# -----------------------
 @app.get("/status")
 async def status() -> dict:
     return {
@@ -60,9 +47,6 @@ async def status() -> dict:
     }
 
 
-# -----------------------
-# Debug Telegram (lazy)
-# -----------------------
 @app.get("/debug/telegram")
 async def debug_telegram() -> dict:
     token_present = bool(env_str("BOT_TOKEN"))
@@ -72,7 +56,6 @@ async def debug_telegram() -> dict:
     if token_present:
         try:
             from telegram import Bot  # type: ignore
-
             token = env_str("BOT_TOKEN")
             b = Bot(token=token)  # type: ignore[arg-type]
             info = await asyncio.to_thread(b.get_webhook_info)
@@ -87,12 +70,10 @@ async def debug_telegram() -> dict:
     }
 
 
-# -----------------------
-# Telegram Webhook (lazy import per-request)
-# -----------------------
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
-    # Optional Telegram secret-token header validation
+    # If TELEGRAM_WEBHOOK_SECRET is set, Telegram must send header:
+    # x-telegram-bot-api-secret-token: <same value>
     expected = (os.getenv("TELEGRAM_WEBHOOK_SECRET") or "").strip()
     if expected:
         got = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
@@ -105,12 +86,11 @@ async def telegram_webhook(request: Request):
         return JSONResponse({"ok": False, "error": "invalid_json"}, status_code=400)
 
     try:
-        # Change this import to your real bot entry if needed:
-        # from app.bot.investor_wallet_bot import process_webhook
+        # Existing bot logic (ptb) lives here
         from app.bot.investor_wallet_bot import process_webhook  # type: ignore
         await process_webhook(update_dict)
     except Exception as e:
-        # Never crash server; return ok to avoid Telegram retry storm
+        # Return 200 to prevent Telegram retry storms
         print(f"process_webhook failed: {e}", file=sys.stderr)
         traceback.print_exc()
         return JSONResponse({"ok": True, "error": "process_webhook_failed"}, status_code=200)
@@ -118,17 +98,11 @@ async def telegram_webhook(request: Request):
     return {"ok": True}
 
 
-# -----------------------
-# Noise reducers
-# -----------------------
-@app.get("/robots.txt", response_class=PlainTextResponse)
+@app.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
 async def robots_txt() -> str:
     return "User-agent: *\nDisallow: /\n"
 
 
-# -----------------------
-# Simple root (no 404 noise)
-# -----------------------
 @app.get("/", include_in_schema=False)
 def root():
     return HTMLResponse(
