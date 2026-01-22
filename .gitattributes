@@ -1,26 +1,7 @@
-# Force LF for text files in repo
 * text=auto eol=lf
-
-# Explicit common text types
-*.py  text eol=lf
 *.ps1 text eol=lf
-*.sh  text eol=lf
+*.py  text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
-*.json text eol=lf
 *.md  text eol=lf
 *.txt text eol=lf
-*.env text eol=lf
-Dockerfile text eol=lf
-
-# Binary (do not normalize)
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.webp binary
-*.ico binary
-*.pdf binary
-*.zip binary
-*.jar binary
-*.exe binary
