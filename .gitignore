@@ -18,26 +18,19 @@ project_scan_report.txt
 tools/db_check.py
 tools/db_probe.py
 tools/seed_position.py
-
 *.bak
-
-*.bak
-
 .admin_key.local
 rv.json
 start.py
 Main.py
 # local secrets / env
-.env
 *.env
 tools/env.local.ps1
 *.local.ps1
-
 # backups
 alembic/env.py.bak_*
 *.bak_*
-
 # venv / cache
-.venv/
-__pycache__/
 *.pyc
+.env.local
+.uvicorn.pid
