@@ -1,29 +1,52 @@
-from pydantic import BaseModel
+from __future__ import annotations
+
 from typing import Optional
-from datetime import datetime
+from pydantic import BaseModel, Field, ConfigDict
 
 
-class UserBase(BaseModel):
+class _Base(BaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+
+# ---------- Users ----------
+
+class UserUpsertIn(_Base):
     telegram_id: int
     username: Optional[str] = None
-    bnb_address: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
-class UserOut(UserBase):
-    balance_slh: float
-    created_at: datetime
+class UserOut(_Base):
+    id: int
+    telegram_id: int
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    is_admin: bool
 
-    class Config:
-        from_attributes = True
+
+# ---------- Accounts / Ledger ----------
+
+class LedgerCreditIn(_Base):
+    telegram_id: int
+    currency: str = "USD"
+    kind: str = "MAIN"
+    amount: str = Field(..., description="Decimal string, e.g. '10.50'")
+    memo: Optional[str] = None
+    ref_type: Optional[str] = None
+    ref_id: Optional[str] = None
 
 
-class TransactionBase(BaseModel):
-    from_user: Optional[int] = None
-    to_user: Optional[int] = None
-    amount_slh: float
-    status: str
-    type: str
-    created_at: datetime
+class LedgerPostResult(_Base):
+    ok: bool
+    ledger_id: int
+    account_id: int
 
-    class Config:
-        from_attributes = True
+
+class BalanceOut(_Base):
+    telegram_id: int
+    account_id: int
+    currency: str
+    kind: str
+    balance: str
