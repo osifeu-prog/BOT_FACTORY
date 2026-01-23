@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from fastapi import FastAPI
 
 from app.api_core import router as core_router
@@ -40,6 +41,16 @@ from fastapi import Request
 
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
+    raw = await request.body()
+    try:
+        j = json.loads((raw.decode("utf-8") if raw else "") or "{}")
+    except Exception:
+        j = {}
+    log.info("tg webhook: update_id=%s keys=%s", j.get("update_id"), list(j.keys())[:10])
+    # optional: log message summary if exists
+    msg = (j.get("message") or {})
+    if msg:
+        log.info("tg message: from=%s chat=%s text=%s", (msg.get("from") or {}).get("id"), (msg.get("chat") or {}).get("id"), (msg.get("text") or "")[:80])
     # Accept Telegram updates and hand them to the bot layer
     payload = await request.json()
 
