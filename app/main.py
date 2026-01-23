@@ -41,7 +41,12 @@ from fastapi import Request
 
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
-    raw = await request.body()
+        raw = await request.body()
+    try:
+        j = json.loads(raw.decode("utf-8") or "{}")
+    except Exception:
+        j = {}
+    log.info("tg webhook hit: update_id=%s keys=%s", j.get("update_id"), list(j.keys())[:8])raw = await request.body()
     try:
         j = json.loads((raw.decode("utf-8") if raw else "") or "{}")
     except Exception:
