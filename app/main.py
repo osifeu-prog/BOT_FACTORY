@@ -35,6 +35,22 @@ def ready(response: Response):
 
 app.include_router(core_router)
 
+
+from fastapi import Request
+
+@app.post("/webhook/telegram")
+async def telegram_webhook(request: Request):
+    # Accept Telegram updates and hand them to the bot layer
+    payload = await request.json()
+
+    # Lazy import so local runs can disable telegram safely
+    from app.bot.investor_wallet_bot import ensure_handlers, process_webhook
+
+    ensure_handlers()
+    await process_webhook(payload)
+    return {"ok": True}
+
+
 @app.on_event("startup")
 async def startup():
     if DISABLE_TELEGRAM:
