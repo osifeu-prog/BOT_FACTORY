@@ -34,3 +34,10 @@ alembic/env.py.bak_*
 *.pyc
 .env.local
 .uvicorn.pid
+# local runtime / smoke artifacts (local-only)
+.run_port.txt
+/tools/smoke*.ps1
+/tools/run_*.ps1
+/tools/stop_*.ps1
+/_smoke_logs/
+/utils/
