@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+echo "pre-push: running repo checks..."
+if [ -f "tools/precommit_check.py" ]; then
+  python tools/precommit_check.py
+fi
+git status --porcelain

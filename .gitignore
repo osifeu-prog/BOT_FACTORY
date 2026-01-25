@@ -41,3 +41,8 @@ alembic/env.py.bak_*
 /tools/stop_*.ps1
 /_smoke_logs/
 /utils/
+/.run_port.txt
+/tools/run_8012*.ps1
+/tools/run_local_a.ps1
+/utils/**
+app/bot/investor_wallet_bot.py.bak

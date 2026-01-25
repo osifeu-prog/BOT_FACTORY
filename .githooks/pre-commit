@@ -1,48 +1,8 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-python - <<'PY'
-import subprocess, sys, re
-
-def read_from_index(path: str) -> bytes:
-    p = subprocess.run(["git", "show", f":{path}"], capture_output=True)
-    return p.stdout if p.returncode == 0 else b""
-
-binary_ext = re.compile(r"\.(png|jpg|jpeg|gif|ico|pdf|zip|woff2?)$", re.I)
-bad_conf = re.compile(rb"^(<<<<<<<|=======|>>>>>>>)", re.M)
-
-paths = subprocess.run(
-    ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
-    capture_output=True, text=True, check=True
-).stdout.splitlines()
-
-bad = []
-for f in paths:
-    if not f or binary_ext.search(f):
-        continue
-    # Don't lint the hook itself
-    if f in (".githooks/pre-commit", ".git/hooks/pre-commit", ".github/workflows/guardrails.yml"):
-        continue
-
-    data = read_from_index(f)
-    if not data:
-        continue
-
-    if bad_conf.search(data):
-        bad.append(f"MERGE CONFLICT MARKERS in {f}")
-        continue
-
-    if b"\xEF\xBB\xBF" in data:
-        bad.append(f"UTF-8 BOM BYTES (EF BB BF) in {f}")
-        continue
-
-    if "\ufeff".encode("utf-8") in data:
-        bad.append(f"U+FEFF CHARACTER in {f}")
-        continue
-
-if bad:
-    print("ERROR: commit blocked due to:", file=sys.stderr)
-    for x in bad:
-        print(" - " + x, file=sys.stderr)
-    sys.exit(1)
-PY
+#!/bin/sh
+set -eu
+if [ -f "tools/precommit_check.py" ]; then
+  python tools/precommit_check.py
+else
+  echo "WARN: tools/precommit_check.py not found; skipping." 1>&2
+fi
+git diff --cached --check >/dev/null
