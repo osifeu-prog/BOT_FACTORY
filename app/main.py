@@ -41,31 +41,14 @@ from fastapi import Request
 
 @app.post("/webhook/telegram")
 async def telegram_webhook(request: Request):
-        raw = await request.body()
+    raw = await request.body()
     try:
         j = json.loads(raw.decode("utf-8") or "{}")
     except Exception:
         j = {}
-    log.info("tg webhook hit: update_id=%s keys=%s", j.get("update_id"), list(j.keys())[:8])raw = await request.body()
-    try:
-        j = json.loads((raw.decode("utf-8") if raw else "") or "{}")
-    except Exception:
-        j = {}
+
     log.info("tg webhook: update_id=%s keys=%s", j.get("update_id"), list(j.keys())[:10])
-    # optional: log message summary if exists
-    msg = (j.get("message") or {})
-    if msg:
-        log.info("tg message: from=%s chat=%s text=%s", (msg.get("from") or {}).get("id"), (msg.get("chat") or {}).get("id"), (msg.get("text") or "")[:80])
-    # Accept Telegram updates and hand them to the bot layer
-    payload = await request.json()
-
-    # Lazy import so local runs can disable telegram safely
-    from app.bot.investor_wallet_bot import ensure_handlers, process_webhook
-
-    ensure_handlers()
-    await process_webhook(payload)
     return {"ok": True}
-
 
 @app.on_event("startup")
 async def startup():
