@@ -45,38 +45,106 @@ from fastapi import Request
 async def telegram_webhook(request: Request, background: BackgroundTasks):
     raw = await request.body()
     try:
-        upd = json.loads(raw.decode("utf-8") or "{}")
+        update = json.loads(raw.decode("utf-8") or "{}")
     except Exception:
-        upd = {}
+        update = {}
 
-    msg = (upd.get("message") or upd.get("edited_message") or {})
-    text = (msg.get("text") or "").strip()
-    chat = (msg.get("chat") or {})
-    chat_id = chat.get("id")
+    msg = _extract_message(update)
+    chat_id = _chat_id(msg)
+    user_id = _from_id(msg) or msg.get("_callback_from_id")
+    text = _text_or_callback(msg)
 
-    logging.getLogger("app").info("tg webhook: update_id=%s text=%s chat_id=%s",
-                                  upd.get("update_id"), text[:50], chat_id)
+    log = logging.getLogger("app")
+    log.info("tg webhook: update_id=%s text=%s chat_id=%s user_id=%s",
+             update.get("update_id"), (text or "")[:60], chat_id, user_id)
 
-    token = os.getenv("TELEGRAM_TOKEN") or os.getenv("BOT_TOKEN")  # support both env names
-    if token and chat_id and text:
-        async def _send():
-            try:
-                if text.startswith("/start"):
-                    reply = "✅ BOT_FACTORY online. (/start OK)"
-                elif text.startswith("/chatid"):
-                    reply = f"chat_id = {chat_id}"
+    token = os.getenv("TELEGRAM_TOKEN") or os.getenv("BOT_TOKEN")
+    if not (token and chat_id):
+        return {"ok": True}
+
+    async def _handle():
+        try:
+            uid = int(user_id or 0)
+
+            # pending admin password flow (after clicking Admin Login)
+            if uid and await _has_pending_login(redis, uid) and text and not text.startswith("admin:") and not text.startswith("public:"):
+                await _clear_pending_login(redis, uid)
+
+                need = (os.getenv("ADMIN_PASSWORD") or "").strip()
+                if not need:
+                    await _tg_send(token, chat_id, "❌ ADMIN_PASSWORD לא מוגדר בשרת.")
+                    return
+
+                if text.strip() == need:
+                    ok = await _grant_admin(redis, uid)
+                    if ok:
+                        await _tg_send(token, chat_id, "✅ התחברת כאדמין.\nבחר פעולה:", _admin_menu())
+                    else:
+                        await _tg_send(token, chat_id, "❌ לא ניתן לשמור סשן אדמין (Redis).")
                 else:
-                    reply = f"echo: {text}"
+                    await _tg_send(token, chat_id, "❌ סיסמה שגויה. לחץ שוב Admin Login כדי לנסות מחדש.")
+                return
 
-                url = f"https://api.telegram.org/bot{token}/sendMessage"
-                payload = {"chat_id": chat_id, "text": reply}
-                async with httpx.AsyncClient(timeout=10) as client:
-                    await client.post(url, json=payload)
-            except Exception as e:
-                logging.getLogger("app").exception("sendMessage failed: %s", str(e)[:200])
+            # /start -> buttons
+            if text.startswith("/start"):
+                await _tg_send(token, chat_id, "✅ BOT_FACTORY online.\nבחר פעולה:", _start_menu())
+                return
 
-        background.add_task(_send)
+            # keep /chatid too
+            if text.startswith("/chatid"):
+                await _tg_send(token, chat_id, f"chat_id={chat_id}\nuser_id={uid}")
+                return
 
+            # public button
+            if text == "public:chatid":
+                await _tg_send(token, chat_id, f"chat_id={chat_id}\nuser_id={uid}")
+                return
+
+            # admin login button
+            if text == "admin:login":
+                if uid and await _is_admin(redis, uid):
+                    await _tg_send(token, chat_id, "✅ כבר מחובר כאדמין.\nבחר פעולה:", _admin_menu())
+                    return
+
+                await _set_pending_login(redis, uid)
+                await _tg_send(
+                    token,
+                    chat_id,
+                    "הכנס סיסמת אדמין (Reply להודעה הזו):",
+                    {"force_reply": True, "selective": True},
+                )
+                return
+
+            # admin actions (only if logged in)
+            if text.startswith("admin:"):
+                if not (uid and await _is_admin(redis, uid)):
+                    await _tg_send(token, chat_id, "❌ אין הרשאת אדמין. לחץ Admin Login והכנס סיסמה.")
+                    return
+
+                if text == "admin:status":
+                    await _tg_send(token, chat_id, "📊 סטטוס: ONLINE ✅\n/health תקין.")
+                    return
+
+                if text == "admin:chatid":
+                    await _tg_send(token, chat_id, f"chat_id={chat_id}\nuser_id={uid}")
+                    return
+
+                if text == "admin:logout":
+                    try:
+                        await redis.delete(f"admin:session:{uid}")
+                    except Exception:
+                        pass
+                    await _tg_send(token, chat_id, "🚪 התנתקת. לחץ Admin Login כדי להתחבר שוב.")
+                    return
+
+                await _tg_send(token, chat_id, "בחר פעולה:", _admin_menu())
+                return
+
+            # default: ignore quietly
+        except Exception as e:
+            logging.getLogger("app").exception("tg handle failed: %s", str(e)[:200])
+
+    background.add_task(_handle)
     return {"ok": True}
 @app.on_event("startup")
 async def startup():
@@ -88,3 +156,113 @@ async def startup():
     from app.bot.investor_wallet_bot import ensure_handlers
     ensure_handlers()
     log.info("telegram bot initialized")
+
+
+def _extract_message(update: dict) -> dict:
+    msg = update.get("message") or update.get("edited_message") or {}
+    cbq = update.get("callback_query") or {}
+    if cbq and cbq.get("message"):
+        # callback query carries message context; treat as message-like
+        msg = cbq.get("message") or msg
+        msg["_callback_data"] = (cbq.get("data") or "").strip()
+        msg["_callback_from_id"] = ((cbq.get("from") or {}).get("id"))
+    return msg or {}
+
+def _chat_id(msg: dict):
+    return (msg.get("chat") or {}).get("id")
+
+def _from_id(msg: dict):
+    return (msg.get("from") or {}).get("id")
+
+def _text_or_callback(msg: dict) -> str:
+    if msg.get("_callback_data"):
+        return msg.get("_callback_data")
+    return (msg.get("text") or "").strip()
+
+async def _tg_send(token: str, chat_id: int, text: str, reply_markup: dict | None = None):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    async with httpx.AsyncClient(timeout=12) as client:
+        await client.post(url, json=payload)
+
+def _start_menu():
+    return {
+        "inline_keyboard": [
+            [{"text": "📌 הצג chat_id", "callback_data": "public:chatid"}],
+            [{"text": "🔐 Admin Login", "callback_data": "admin:login"}],
+        ]
+    }
+
+def _admin_menu():
+    return {
+        "inline_keyboard": [
+            [{"text": "📊 סטטוס", "callback_data": "admin:status"}],
+            [{"text": "📌 chat_id", "callback_data": "admin:chatid"}],
+            [{"text": "🚪 Logout", "callback_data": "admin:logout"}],
+        ]
+    }
+
+def _admin_session_ttl() -> int:
+    try:
+        return int(os.getenv("ADMIN_SESSION_TTL_SECONDS") or "604800")  # 7d
+    except Exception:
+        return 604800
+
+def _admin_pending_ttl() -> int:
+    try:
+        return int(os.getenv("ADMIN_LOGIN_PENDING_TTL_SECONDS") or "300")  # 5m
+    except Exception:
+        return 300
+
+async def _is_admin(db_redis, user_id: int) -> bool:
+    try:
+        admin_id = int(os.getenv("ADMIN_USER_ID") or "0")
+    except Exception:
+        admin_id = 0
+    if admin_id and user_id == admin_id:
+        return True
+    if not db_redis or not user_id:
+        return False
+    try:
+        v = await db_redis.get(f"admin:session:{user_id}")
+        return bool(v)
+    except Exception:
+        return False
+
+async def _grant_admin(db_redis, user_id: int) -> bool:
+    if not db_redis or not user_id:
+        return False
+    try:
+        await db_redis.set(f"admin:session:{user_id}", "1", ex=_admin_session_ttl())
+        return True
+    except Exception:
+        return False
+
+async def _set_pending_login(db_redis, user_id: int) -> bool:
+    if not db_redis or not user_id:
+        return False
+    try:
+        await db_redis.set(f"admin:pending:{user_id}", "1", ex=_admin_pending_ttl())
+        return True
+    except Exception:
+        return False
+
+async def _has_pending_login(db_redis, user_id: int) -> bool:
+    if not db_redis or not user_id:
+        return False
+    try:
+        v = await db_redis.get(f"admin:pending:{user_id}")
+        return bool(v)
+    except Exception:
+        return False
+
+async def _clear_pending_login(db_redis, user_id: int):
+    if not db_redis or not user_id:
+        return
+    try:
+        await db_redis.delete(f"admin:pending:{user_id}")
+    except Exception:
+        pass
+
