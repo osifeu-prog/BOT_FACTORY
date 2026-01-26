@@ -144,9 +144,21 @@ await _set_pending_login(redis_client, uid)
                     return
 
                 if text == "admin:status":
-                msg = ("STATUS\n"f"online=true\n"f"uid={uid}\n"f"chat_id={chat_id}")
-                await _tg_send(token, chat_id, msg)
-
+                    rc = False
+                    try:
+                        rc = bool(redis_client)
+                    except Exception:
+                        rc = False
+                    pwd_set = bool((os.getenv("ADMIN_PASSWORD") or "").strip())
+                    msg = (
+                        "STATUS\n"
+                        f"online=true\n"
+                        f"redis_configured={rc}\n"
+                        f"admin_password_set={pwd_set}\n"
+                        f"uid={uid}\n"
+                        f"chat_id={chat_id}"
+                    )
+                    await _tg_send(token, chat_id, msg)
                     return
 "
                         f"online=true
