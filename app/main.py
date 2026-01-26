@@ -153,21 +153,6 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
                     )
                     await _tg_send(token, chat_id, msg)
                     return
-"
-                        f"online=true
-"
-                        f"redis_connected={rc_ok}
-"
-                        f"admin_password_set={pwd_set}
-"
-                        f"pending_login={pending}
-"
-                        f"session_active={session}
-"
-                        f"uid={uid}
-"
-                        f"chat_id={chat_id}"
-                    )
                 rc_ok = await _redis_healthcheck(redis_client)
                     pending = False
                     session = False
