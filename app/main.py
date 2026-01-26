@@ -137,28 +137,22 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
                     return
 
                 if text == "admin:status":
-                    rc_ok = await _redis_healthcheck(redis_client)
-                    pending = False
-                    session = False
+                    rc = False
                     try:
-                        pending = bool(await redis_client.get(f"admin:pending:{uid}")) if rc_ok else False
-                        session = bool(await redis_client.get(f"admin:session:{uid}")) if rc_ok else False
+                        rc = bool(redis_client)
                     except Exception:
-                        pending = False
-                        session = False
-                    pwd_set = bool((os.getenv("ADMIN_PASSWORD") or "").strip())
-                rc_ok = await _redis_healthcheck(redis_client)
-                    pending = False
-                    session = False
-                    try:
-                        pending = bool(await redis_client.get(f"admin:pending:{uid}")) if rc_ok else False
-                        session = bool(await redis_client.get(f"admin:session:{uid}")) if rc_ok else False
-                    except Exception:
-                        pending = False
-                        session = False
+                        rc = False
                     pwd_set = bool((os.getenv("ADMIN_PASSWORD") or "").strip())
                     msg = (
-                        "STATUS
+                        "STATUS\n"
+                        f"online=true\n"
+                        f"redis_configured={rc}\n"
+                        f"admin_password_set={pwd_set}\n"
+                        f"uid={uid}\n"
+                        f"chat_id={chat_id}"
+                    )
+                    await _tg_send(token, chat_id, msg)
+                    return
 "
                         f"online=true
 "
