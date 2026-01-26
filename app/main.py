@@ -54,6 +54,9 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
     user_id = _from_id(msg) or msg.get("_callback_from_id")
     text = _text_or_callback(msg)
 
+    chat_type = ((msg.get('chat') or {}).get('type') or '').strip()
+    is_private = (chat_type == 'private')
+
     log = logging.getLogger("app")
     log.info("tg webhook: update_id=%s text=%s chat_id=%s user_id=%s",
              update.get("update_id"), (text or "")[:60], chat_id, user_id)
@@ -121,7 +124,11 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
                     await _tg_send(token, chat_id, "✅ כבר מחובר כאדמין.\nבחר פעולה:", _admin_menu())
                     return
 
-                await _set_pending_login(redis_client, uid)
+                                if not redis_client:
+                    await _tg_send(token, chat_id, 'ADMIN login requires Redis, but Redis is not connected. Check REDIS_URL / Railway Redis service.')
+                    return
+
+await _set_pending_login(redis_client, uid)
                 await _tg_send(
                     token,
                     chat_id,
