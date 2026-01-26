@@ -124,10 +124,6 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
                     await _tg_send(token, chat_id, "✅ כבר מחובר כאדמין.\nבחר פעולה:", _admin_menu())
                     return
 
-                                if not redis_client:
-                    await _tg_send(token, chat_id, 'ADMIN login requires Redis, but Redis is not connected. Check REDIS_URL / Railway Redis service.')
-                    return
-
 await _set_pending_login(redis_client, uid)
                 await _tg_send(
                     token,
