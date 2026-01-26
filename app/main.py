@@ -59,6 +59,8 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
              update.get("update_id"), (text or "")[:60], chat_id, user_id)
 
     token = os.getenv("TELEGRAM_TOKEN") or os.getenv("BOT_TOKEN")
+    redis_client = _get_redis_client(request)
+
     # redis_client may live on request.app.state; keep webhook resilient if missing
     redis_client = None
     try:
@@ -110,6 +112,11 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
 
             # admin login button
             if text == "admin:login":
+                # Require Redis for login/session; otherwise user will be stuck
+                if not await _redis_healthcheck(redis_client):
+                    await _tg_send(token, chat_id, "⚠️ Redis לא מחובר/לא נגיש כרגע. לא ניתן לבצע Admin Login.\nבדוק ש-REDIS_URL קיים ושאתחול Redis הצליח בלוגים.")
+                    return
+
                 if uid and await _is_admin(redis_client, uid):
                     await _tg_send(token, chat_id, "✅ כבר מחובר כאדמין.\nבחר פעולה:", _admin_menu())
                     return
@@ -130,7 +137,28 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
                     return
 
                 if text == "admin:status":
-                    await _tg_send(token, chat_id, "📊 סטטוס: ONLINE ✅\n/health תקין.")
+                    rc_ok = await _redis_healthcheck(redis_client)
+                    pending = False
+                    session = False
+                    try:
+                        pending = bool(await redis_client.get(f"admin:pending:{uid}")) if rc_ok else False
+                        session = bool(await redis_client.get(f"admin:session:{uid}")) if rc_ok else False
+                    except Exception:
+                        pending = False
+                        session = False
+                    pwd_set = bool((os.getenv("ADMIN_PASSWORD") or "").strip())
+                    await _tg_send(
+                        token,
+                        chat_id,
+                        f"✅ STATUS
+online=true
+redis_connected={rc_ok}
+admin_password_set={pwd_set}
+pending_login={pending}
+session_active={session}
+uid={uid}
+chat_id={chat_id}",
+                    )
                     return
 
                 if text == "admin:chatid":
@@ -273,4 +301,44 @@ async def _clear_pending_login(db_redis, user_id: int):
         await db_redis.delete(f"admin:pending:{user_id}")
     except Exception:
         pass
+
+
+
+def _get_redis_client(request):
+    # Try multiple places (app.state + module-level fallbacks)
+    try:
+        st = getattr(getattr(request, "app", None), "state", None)
+    except Exception:
+        st = None
+
+    for name in ("redis", "redis_client", "redis_conn", "redis_async", "redis_pool"):
+        try:
+            if st is not None and getattr(st, name, None) is not None:
+                return getattr(st, name)
+        except Exception:
+            pass
+
+    # module fallbacks (best-effort)
+    for modname in ("app.redis", "app.db", "app.main"):
+        try:
+            mod = __import__(modname, fromlist=["*"])
+            for name in ("redis", "redis_client", "client", "r"):
+                if getattr(mod, name, None) is not None:
+                    return getattr(mod, name)
+        except Exception:
+            pass
+
+    return None
+
+async def _redis_healthcheck(rc) -> bool:
+    if rc is None:
+        return False
+    try:
+        # minimal set/get roundtrip
+        k = "diag:redis:ping"
+        await rc.set(k, "1", ex=15)
+        v = await rc.get(k)
+        return (v is not None)
+    except Exception:
+        return False
 
