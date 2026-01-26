@@ -59,6 +59,14 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
              update.get("update_id"), (text or "")[:60], chat_id, user_id)
 
     token = os.getenv("TELEGRAM_TOKEN") or os.getenv("BOT_TOKEN")
+    # redis_client may live on request.app.state; keep webhook resilient if missing
+    redis_client = None
+    try:
+        redis_client = getattr(getattr(request, "app", None), "state", None)
+        redis_client = getattr(redis_client, "redis_client", None)
+    except Exception:
+        redis_client = None
+
     if not (token and chat_id):
         return {"ok": True}
 
@@ -67,8 +75,8 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
             uid = int(user_id or 0)
 
             # pending admin password flow (after clicking Admin Login)
-            if uid and await _has_pending_login(redis, uid) and text and not text.startswith("admin:") and not text.startswith("public:"):
-                await _clear_pending_login(redis, uid)
+            if uid and await _has_pending_login(redis_client, uid) and text and not text.startswith("admin:") and not text.startswith("public:"):
+                await _clear_pending_login(redis_client, uid)
 
                 need = (os.getenv("ADMIN_PASSWORD") or "").strip()
                 if not need:
@@ -76,7 +84,7 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
                     return
 
                 if text.strip() == need:
-                    ok = await _grant_admin(redis, uid)
+                    ok = await _grant_admin(redis_client, uid)
                     if ok:
                         await _tg_send(token, chat_id, "✅ התחברת כאדמין.\nבחר פעולה:", _admin_menu())
                     else:
@@ -102,11 +110,11 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
 
             # admin login button
             if text == "admin:login":
-                if uid and await _is_admin(redis, uid):
+                if uid and await _is_admin(redis_client, uid):
                     await _tg_send(token, chat_id, "✅ כבר מחובר כאדמין.\nבחר פעולה:", _admin_menu())
                     return
 
-                await _set_pending_login(redis, uid)
+                await _set_pending_login(redis_client, uid)
                 await _tg_send(
                     token,
                     chat_id,
@@ -117,7 +125,7 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
 
             # admin actions (only if logged in)
             if text.startswith("admin:"):
-                if not (uid and await _is_admin(redis, uid)):
+                if not (uid and await _is_admin(redis_client, uid)):
                     await _tg_send(token, chat_id, "❌ אין הרשאת אדמין. לחץ Admin Login והכנס סיסמה.")
                     return
 
@@ -131,7 +139,7 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
 
                 if text == "admin:logout":
                     try:
-                        await redis.delete(f"admin:session:{uid}")
+                        await redis_client.delete(f"admin:session:{uid}")
                     except Exception:
                         pass
                     await _tg_send(token, chat_id, "🚪 התנתקת. לחץ Admin Login כדי להתחבר שוב.")
