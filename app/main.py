@@ -176,8 +176,15 @@ async def telegram_webhook(request: Request, background: BackgroundTasks):
     return {"ok": True}
 @app.on_event("startup")
 async def startup():
-    if DISABLE_TELEGRAM:
-        log.info("telegram disabled (DISABLE_TELEGRAM=1)")
+    # Backward/forward compatible toggles:
+    # - DISABLE_TELEGRAM=1 disables
+    # - ENABLE_TELEGRAM_BOT=0 disables
+    disable_telegram = str(os.getenv("DISABLE_TELEGRAM", "")).strip().lower() in {"1", "true", "yes", "on"}
+    enable_bot_raw = os.getenv("ENABLE_TELEGRAM_BOT")
+    enable_bot = True if enable_bot_raw is None else str(enable_bot_raw).strip().lower() not in {"0", "false", "no", "off", ""}
+
+    if disable_telegram or (not enable_bot):
+        log.info("telegram disabled (DISABLE_TELEGRAM=1 or ENABLE_TELEGRAM_BOT=0)")
         return
 
     # Import only when enabled so BOT_TOKEN isn't required when disabled
@@ -185,152 +192,4 @@ async def startup():
     ensure_handlers()
     log.info("telegram bot initialized")
 
-
-def _extract_message(update: dict) -> dict:
-    msg = update.get("message") or update.get("edited_message") or {}
-    cbq = update.get("callback_query") or {}
-    if cbq and cbq.get("message"):
-        # callback query carries message context; treat as message-like
-        msg = cbq.get("message") or msg
-        msg["_callback_data"] = (cbq.get("data") or "").strip()
-        msg["_callback_from_id"] = ((cbq.get("from") or {}).get("id"))
-    return msg or {}
-
-def _chat_id(msg: dict):
-    return (msg.get("chat") or {}).get("id")
-
-def _from_id(msg: dict):
-    return (msg.get("from") or {}).get("id")
-
-def _text_or_callback(msg: dict) -> str:
-    if msg.get("_callback_data"):
-        return msg.get("_callback_data")
-    return (msg.get("text") or "").strip()
-
-async def _tg_send(token: str, chat_id: int, text: str, reply_markup: dict | None = None):
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
-    if reply_markup:
-        payload["reply_markup"] = reply_markup
-    async with httpx.AsyncClient(timeout=12) as client:
-        await client.post(url, json=payload)
-
-def _start_menu():
-    return {
-        "inline_keyboard": [
-            [{"text": "📌 הצג chat_id", "callback_data": "public:chatid"}],
-            [{"text": "🔐 Admin Login", "callback_data": "admin:login"}],
-        ]
-    }
-
-def _admin_menu():
-    return {
-        "inline_keyboard": [
-            [{"text": "📊 סטטוס", "callback_data": "admin:status"}],
-            [{"text": "📌 chat_id", "callback_data": "admin:chatid"}],
-            [{"text": "🚪 Logout", "callback_data": "admin:logout"}],
-        ]
-    }
-
-def _admin_session_ttl() -> int:
-    try:
-        return int(os.getenv("ADMIN_SESSION_TTL_SECONDS") or "604800")  # 7d
-    except Exception:
-        return 604800
-
-def _admin_pending_ttl() -> int:
-    try:
-        return int(os.getenv("ADMIN_LOGIN_PENDING_TTL_SECONDS") or "300")  # 5m
-    except Exception:
-        return 300
-
-async def _is_admin(db_redis, user_id: int) -> bool:
-    try:
-        admin_id = int(os.getenv("ADMIN_USER_ID") or "0")
-    except Exception:
-        admin_id = 0
-    if admin_id and user_id == admin_id:
-        return True
-    if not db_redis or not user_id:
-        return False
-    try:
-        v = await db_redis.get(f"admin:session:{user_id}")
-        return bool(v)
-    except Exception:
-        return False
-
-async def _grant_admin(db_redis, user_id: int) -> bool:
-    if not db_redis or not user_id:
-        return False
-    try:
-        await db_redis.set(f"admin:session:{user_id}", "1", ex=_admin_session_ttl())
-        return True
-    except Exception:
-        return False
-
-async def _set_pending_login(db_redis, user_id: int) -> bool:
-    if not db_redis or not user_id:
-        return False
-    try:
-        await db_redis.set(f"admin:pending:{user_id}", "1", ex=_admin_pending_ttl())
-        return True
-    except Exception:
-        return False
-
-async def _has_pending_login(db_redis, user_id: int) -> bool:
-    if not db_redis or not user_id:
-        return False
-    try:
-        v = await db_redis.get(f"admin:pending:{user_id}")
-        return bool(v)
-    except Exception:
-        return False
-
-async def _clear_pending_login(db_redis, user_id: int):
-    if not db_redis or not user_id:
-        return
-    try:
-        await db_redis.delete(f"admin:pending:{user_id}")
-    except Exception:
-        pass
-
-
-
-def _get_redis_client(request):
-    # Try multiple places (app.state + module-level fallbacks)
-    try:
-        st = getattr(getattr(request, "app", None), "state", None)
-    except Exception:
-        st = None
-
-    for name in ("redis", "redis_client", "redis_conn", "redis_async", "redis_pool"):
-        try:
-            if st is not None and getattr(st, name, None) is not None:
-                return getattr(st, name)
-        except Exception:
-            pass
-
-    # module fallbacks (best-effort)
-    for modname in ("app.redis", "app.db", "app.main"):
-        try:
-            mod = __import__(modname, fromlist=["*"])
-            for name in ("redis", "redis_client", "client", "r"):
-                if getattr(mod, name, None) is not None:
-                    return getattr(mod, name)
-        except Exception:
-            pass
-
-    return None
-
-async def _redis_healthcheck(rc) -> bool:
-    if rc is None:
-        return False
-    try:
-        # minimal set/get roundtrip
-        k = "diag:redis:ping"
-        await rc.set(k, "1", ex=15)
-        v = await rc.get(k)
-        return (v is not None)
-    except Exception:
-        return False
 
